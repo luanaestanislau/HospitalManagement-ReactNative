@@ -1,30 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
-import {
-  AlertItem,
-  Delivery,
-  initialDeliveries,
-  initialItems,
-  initialTransfers,
-  initialUsers,
-  institutionalDomains,
-  StockItem,
-  Transfer,
-  User,
-  Fornecedor, 
-  HospitalParceiro, 
-  EventoRisco, 
-  CasoClinico,
-  initialFornecedores,
-  initialHospitaisParceiros,
-  initialEventosRisco,
-  initialCasosClinicos,
-} from '../data/mockData';
-
-import NotificationService from '../services/NotificationService';
-import { DatabaseService } from '../services/DatabaseService';
-import IaService from '../services/IaService';
+import { AlertItem, Delivery, StockItem, Transfer, User } from '../data/mockData';
+import { apiFetch, clearToken, saveToken } from '../services/api';
 
 type Analysis = {
   scoreInterno: number;
@@ -45,11 +23,19 @@ type Analysis = {
   }>;
 };
 
+type DashboardResumo = {
+  user: User | null;
+  items: StockItem[];
+  alerts: AlertItem[];
+  deliveries: Delivery[];
+  transfers: Transfer[];
+  analysis: Analysis;
+};
+
 type AppContextValue = {
   bootstrapped: boolean;
   authenticated: boolean;
   user: User | null;
-  users: User[];
   items: StockItem[];
   alerts: AlertItem[];
   deliveries: Delivery[];
@@ -60,391 +46,166 @@ type AppContextValue = {
   register: (nome: string, email: string, senha: string) => Promise<boolean>;
   confirmRegistration: () => Promise<boolean>;
   logout: () => Promise<void>;
-  refreshData: () => void;
-  recalculateStock: (itemId: number) => void;
-  addPushAlert: (titulo: string, descricao: string, prioridade?: AlertItem['prioridade'], tipo?: AlertItem['tipo']) => void;
-  fornecedores: Fornecedor[];
-  hospitaisParceiros: HospitalParceiro[];
-  eventosRisco: EventoRisco[];
-  casosClinicos: CasoClinico[];
-  notificationToken: string | null;
-  syncWithDatabase: () => Promise<void>;
+  refreshData: () => Promise<void>;
 };
 
 const STORAGE_KEY = 'medistock.currentUser';
-const USERS_KEY = 'medistock.users';
 
 const AppContext = createContext<AppContextValue | null>(null);
 
-function normalizeDomain(email: string) {
-  return email.trim().split('@').pop()?.toLowerCase() ?? '';
-}
-
-function scoreClass(score: number) {
-  if (score >= 85) return 'Otimizado';
-  if (score >= 65) return 'Controlado';
-  return 'Atenção';
-}
-
-function suggestLocal(item: StockItem) {
-  const categoria = item.categoria?.toLowerCase() ?? '';
-  if (categoria.includes('quimioter')) return 'Oncologia - Geladeira Especializada';
-  if (categoria.includes('trombol')) return 'Emergência - Armário Refrigerado A';
-  if (categoria.includes('imunossup')) return 'Hematologia - Refrigerador';
-  if (categoria.includes('neurol')) return 'Neurologia Pediátrica - Geladeira';
-  if (categoria.includes('imunobiol')) return 'Câmara Fria 01';
-  if (item.local_armazenamento) return item.local_armazenamento;
-  return 'Farmácia Central A1';
-}
-
-function transferTime(item: StockItem) {
-  if (item.status === 'critico') return 20;
-  if (item.status === 'atencao') return 40;
-  return 60;
-}
-
-function motive(item: StockItem) {
-  if (item.status === 'critico') return 'Reposição imediata para reduzir tempo de transferência';
-  if (item.status === 'atencao') return 'Manter perto do ponto de uso e evitar retrabalho logístico';
-  return 'Estoque estável, sem necessidade de movimentação urgente';
-}
-
-function deriveAlerts(items: StockItem[]): AlertItem[] {
-  return items
-    .filter((item) => item.status === 'critico')
-    .map((item) => ({
-      id: item.id,
-      tipo: 'estoque_critico' as const,
-      prioridade: 'critico' as const,
-      titulo: item.nome,
-      descricao: `Qtd: ${item.quantidade_atual} · Mín: ${item.quantidade_minima}`,
-      item_id: item.id,
-      acoes: ['Repor', 'Ver', 'Redistribuir'],
-    }));
-}
-
-function deriveAnalysis(items: StockItem[]): Analysis {
-  const prioritarios = items.filter((item) => item.tipo === 'essencial_baixa_demanda');
-  const semLocal = prioritarios.filter((item) => !item.local_armazenamento).length;
-  const criticos = prioritarios.filter((item) => item.status === 'critico').length;
-  const atencao = prioritarios.filter((item) => item.status === 'atencao').length;
-
-  const recomendacoes = prioritarios
-    .map((item) => {
-      const atual = item.quantidade_atual;
-      const minimo = item.quantidade_minima;
-      const recomendado = item.quantidade_recomendada_ia ?? minimo;
-      return {
-        item: item.nome,
-        status: item.status,
-        localAtual: item.local_armazenamento ?? 'Não definido',
-        localSugerido: suggestLocal(item),
-        quantidade: atual,
-        quantidadeSugerida: Math.max(recomendado, minimo),
-        prioridade: atual <= minimo ? ('alta' as const) : ('media' as const),
-        tempoTransferencia: transferTime(item),
-        motivo: motive(item),
-      };
-    })
-    .sort((a, b) => {
-      const order = (value: 'alta' | 'media') => (value === 'alta' ? 0 : 1);
-      if (order(a.prioridade) !== order(b.prioridade)) return order(a.prioridade) - order(b.prioridade);
-      return b.quantidadeSugerida - a.quantidadeSugerida;
-    });
-
-  const score = Math.max(0, 100 - criticos * 12 - atencao * 4 - semLocal * 8 - prioritarios.length * 2);
-
-  return {
-    scoreInterno: score,
-    classificacao: scoreClass(score),
-    itensCriticos: criticos,
-    itensSemLocal: semLocal,
-    itensPrioritarios: prioritarios.length,
-    recomendacoes: recomendacoes.slice(0, 4),
-  };
-}
-
-function buildUserFromRegistration(nome: string, email: string, senha: string): User {
-  const year = new Date().getFullYear();
-  const idRand = Math.abs(email.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)) % 10000;
-  return {
-    nome,
-    email,
-    senha,
-    cargo: 'Farmacêutico Responsável',
-    matricula: `HE-${year}-${idRand}`,
-    departamento: 'Conexão de farmácia e terapêutica',
-    registro: `CRF-SP ${idRand}`,
-    hospital: 'HC Unicamp',
-  };
-}
-
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [bootstrapped, setBootstrapped] = useState(false);
-  const [users, setUsers] = useState<User[]>(initialUsers);
-  const [currentEmail, setCurrentEmail] = useState<string | null>(null);
-  const [items, setItems] = useState<StockItem[]>(initialItems);
-  const [deliveries] = useState<Delivery[]>(initialDeliveries);
-  const [transfers] = useState<Transfer[]>(initialTransfers);
-  const [pushAlerts, setPushAlerts] = useState<AlertItem[]>([]);
+  const [user, setUser] = useState<User | null>(null);
+  const [items, setItems] = useState<StockItem[]>([]);
+  const [alerts, setAlerts] = useState<AlertItem[]>([]);
+  const [deliveries, setDeliveries] = useState<Delivery[]>([]);
+  const [transfers, setTransfers] = useState<Transfer[]>([]);
+  const [analysis, setAnalysis] = useState<Analysis>({
+    scoreInterno: 0,
+    classificacao: 'Carregando...',
+    itensCriticos: 0,
+    itensSemLocal: 0,
+    itensPrioritarios: 0,
+    recomendacoes: [],
+  });
   const [error, setError] = useState<string | null>(null);
-  const [fornecedores, setFornecedores] = useState<Fornecedor[]>(initialFornecedores);
-  const [hospitaisParceiros, setHospitaisParceiros] = useState<HospitalParceiro[]>(initialHospitaisParceiros);
-  const [eventosRisco, setEventosRisco] = useState<EventoRisco[]>(initialEventosRisco);
-  const [casosClinicos, setCasosClinicos] = useState<CasoClinico[]>(initialCasosClinicos);
-  const [notificationToken, setNotificationToken] = useState<string | null>(null);
 
-  const user = useMemo(
-    () => users.find((entry) => entry.email === currentEmail) ?? null,
-    [currentEmail, users],
-  );
+  const loadDashboard = useCallback(async () => {
+    const data = await apiFetch<DashboardResumo>('/dashboard/resumo', { method: 'GET' });
 
-  useEffect(() => {
-    (async () => {
-      await DatabaseService.initialize();
-      
-      await NotificationService.initialize();
-      setNotificationToken(NotificationService.getToken());
-
-      NotificationService.setupListeners(
-        (alert) => addPushAlert(alert.titulo, alert.descricao, alert.prioridade, alert.tipo),
-        () => {
-        }
-      );
-
-      await syncWithDatabase();
-    })();
-  }, []);
-
-  const syncWithDatabase = useCallback(async () => {
-    try {
-      // Sincronizar itens
-      const itemsDb = await DatabaseService.getItems();
-      if (itemsDb.length > 0) {
-        setItems(itemsDb);
-      } else {
-        // Salvar items iniciais no DB
-        for (const item of items) {
-          await DatabaseService.insertItem(item);
-        }
-      }
-
-      // Sincronizar fornecedores
-      const fornecedoresDb = await DatabaseService.getFornecedores();
-      if (fornecedoresDb.length > 0) {
-        setFornecedores(fornecedoresDb);
-      } else {
-        for (const f of fornecedores) {
-          await DatabaseService.insertFornecedor(f);
-        }
-      }
-
-      // Sincronizar hospitais
-      const hospitaisDb = await DatabaseService.getHospitais();
-      if (hospitaisDb.length > 0) {
-        setHospitaisParceiros(hospitaisDb);
-      } else {
-        for (const h of hospitaisParceiros) {
-          await DatabaseService.insertHospital(h);
-        }
-      }
-
-      // Sincronizar eventos de risco
-      const eventosDb = await DatabaseService.getEventosRisco();
-      if (eventosDb.length > 0) {
-        setEventosRisco(eventosDb);
-      } else {
-        for (const e of eventosRisco) {
-          await DatabaseService.insertEventoRisco(e);
-        }
-      }
-
-      // Sincronizar casos clínicos
-      const casosDb = await DatabaseService.getCasosClinicos();
-      if (casosDb.length > 0) {
-        setCasosClinicos(casosDb);
-      } else {
-        for (const c of casosClinicos) {
-          await DatabaseService.insertCasoClinico(c);
-        }
-      }
-    } catch (error) {
-      console.warn('Erro ao sincronizar com DB:', error);
-    }
-  }, [items, fornecedores, hospitaisParceiros, eventosRisco, casosClinicos]);
-
-  const derivedAlerts = useMemo(() => deriveAlerts(items), [items]);
-  const alerts = useMemo(() => [...pushAlerts, ...derivedAlerts], [pushAlerts, derivedAlerts]);
-  const analysis = useMemo(() => deriveAnalysis(items), [items]);
-
-  const refreshData = useCallback(() => {
-    setItems((current) =>
-      current.map((item) => {
-        const atual = item.quantidade_atual;
-        const minimo = item.quantidade_minima;
-        let status: StockItem['status'];
-        if (atual <= minimo * 0.3) status = 'critico';
-        else if (atual <= minimo) status = 'atencao';
-        else status = 'normal';
-        return { ...item, status };
-      }),
+    setUser(data.user);
+    setItems(data.items ?? []);
+    setAlerts(data.alerts ?? []);
+    setDeliveries(data.deliveries ?? []);
+    setTransfers(data.transfers ?? []);
+    setAnalysis(
+      data.analysis ?? {
+        scoreInterno: 0,
+        classificacao: 'Sem dados',
+        itensCriticos: 0,
+        itensSemLocal: 0,
+        itensPrioritarios: 0,
+        recomendacoes: [],
+      },
     );
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
     setError(null);
-    const found = users.find((entry) => entry.email === email && entry.senha === password);
-    if (!found) {
+    try {
+      const data = await apiFetch<{ token: string; usuario?: User }>('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, senha: password }),
+      });
+
+      await saveToken(data.token);
+      if (data.usuario?.email) {
+        await AsyncStorage.setItem(STORAGE_KEY, data.usuario.email);
+        setUser(data.usuario);
+      } else {
+        await AsyncStorage.setItem(STORAGE_KEY, email);
+      }
+
+      await loadDashboard();
+      return true;
+    } catch {
       setError('E-mail ou senha incorretos.');
       return false;
     }
-    setCurrentEmail(found.email);
-    try {
-      await AsyncStorage.setItem(STORAGE_KEY, found.email);
-    } catch (err) {
-      console.warn('AsyncStorage setItem error:', err);
-    }
-    return true;
-  }, [users]);
+  }, [loadDashboard]);
 
   const register = useCallback(async (nome: string, email: string, senha: string) => {
     setError(null);
-    if (users.some((entry) => entry.email === email)) {
-      setError('E-mail já cadastrado no sistema.');
-      return false;
-    }
-    if (!Object.prototype.hasOwnProperty.call(institutionalDomains, normalizeDomain(email))) {
-      setError('Domínio institucional não autorizado.');
-      return false;
-    }
-    const created = buildUserFromRegistration(nome, email, senha);
-    const nextUsers = [...users, created];
-    setUsers(nextUsers);
     try {
-      await AsyncStorage.setItem(USERS_KEY, JSON.stringify(nextUsers));
-      await AsyncStorage.setItem(STORAGE_KEY, email);
-    } catch (err) {
-      console.warn('AsyncStorage setItem error:', err);
-    }
-    setCurrentEmail(email);
-    return true;
-  }, [users]);
+      await apiFetch<{ token: string; usuario?: User }>('/auth/registro', {
+        method: 'POST',
+        body: JSON.stringify({ nome, email, senha }),
+      });
 
-  const confirmRegistration = useCallback(async () => {
-    if (!user) return false;
-    try {
-      await AsyncStorage.setItem(STORAGE_KEY, user.email);
-    } catch (err) {
-      console.warn('AsyncStorage setItem error:', err);
-    }
-    return true;
-  }, [user]);
-
-  const logout = useCallback(async () => {
-    setCurrentEmail(null);
-    try {
-      await AsyncStorage.removeItem(STORAGE_KEY);
-    } catch (err) {
-      console.warn('AsyncStorage removeItem error:', err);
+      // After successful registration, redirect to login
+      return true;
+    } catch {
+      setError('Erro ao cadastrar. Tente novamente.');
+      return false;
     }
   }, []);
 
+  const refreshData = useCallback(async () => {
+    try {
+      await loadDashboard();
+    } catch (err) {
+      console.warn('Erro ao atualizar dashboard:', err);
+    }
+  }, [loadDashboard]);
 
-  const addPushAlert = useCallback(
-    (titulo: string, descricao: string, prioridade: AlertItem['prioridade'] = 'atencao', tipo: AlertItem['tipo'] = 'push') => {
-      setPushAlerts((current) => {
-        if (current.some((item) => item.titulo === titulo && item.descricao === descricao)) return current;
-        return [
-          {
-            id: Date.now(),
-            tipo,
-            prioridade,
-            titulo,
-            descricao,
-            acoes: ['Ver'],
-          },
-          ...current,
-        ];
+  const confirmRegistration = useCallback(async () => {
+    setError(null);
+    try {
+      await apiFetch<{ success: boolean }>('/auth/confirmar-matricula', {
+        method: 'POST',
+        body: JSON.stringify({}),
       });
-    },
-    [],
-  );
+
+      await refreshData();
+      return true;
+    } catch {
+      setError('Erro ao confirmar matrícula.');
+      return false;
+    }
+  }, [refreshData]);
+
+  const logout = useCallback(async () => {
+    setUser(null);
+    setItems([]);
+    setAlerts([]);
+    setDeliveries([]);
+    setTransfers([]);
+    setAnalysis({
+      scoreInterno: 0,
+      classificacao: 'Sem dados',
+      itensCriticos: 0,
+      itensSemLocal: 0,
+      itensPrioritarios: 0,
+      recomendacoes: [],
+    });
+
+    await clearToken();
+    await AsyncStorage.removeItem(STORAGE_KEY);
+  }, []);
 
   useEffect(() => {
     (async () => {
       try {
-        const storedEmail = await AsyncStorage.getItem(STORAGE_KEY);
-        const storedUsers = await AsyncStorage.getItem(USERS_KEY);
-        if (storedUsers) {
-          try {
-            setUsers(JSON.parse(storedUsers) as User[]);
-          } catch {
-            setUsers(initialUsers);
-          }
+        const storedUser = await AsyncStorage.getItem(STORAGE_KEY);
+        if (storedUser) {
+          await loadDashboard();
         }
-        if (storedEmail) setCurrentEmail(storedEmail);
       } catch (err) {
-        console.warn('AsyncStorage error:', err);
-        // Continue without AsyncStorage if there's an error
+        console.warn('Erro ao inicializar app:', err);
       } finally {
         setBootstrapped(true);
       }
     })();
-  }, []);
+  }, [loadDashboard]);
 
   const value = useMemo<AppContextValue>(
     () => ({
       bootstrapped,
       authenticated: Boolean(user),
       user,
-      users,
       items,
       alerts,
       deliveries,
       transfers,
       analysis,
       error,
-      fornecedores,
-      hospitaisParceiros,
-      eventosRisco,
-      casosClinicos,
-      notificationToken,
-      syncWithDatabase,
       login,
       register,
       confirmRegistration,
       logout,
       refreshData,
-      recalculateStock: (itemId: number) => {
-        setItems((current) =>
-          current.map((item) => {
-            if (item.id !== itemId) return item;
-            const historico = item.historico_consumo ?? [];
-            const mediaDiaria =
-              historico.length === 0
-                ? item.quantidade_minima
-                : historico.reduce((sum, value) => sum + value, 0) / historico.length;
-            const next: StockItem = {
-              ...item,
-              local_armazenamento: suggestLocal(item),
-            };
-            if (item.tipo === 'primordial') {
-              next.quantidade_minima = Math.max(item.quantidade_minima, Math.ceil(mediaDiaria * 7 + mediaDiaria * 1.5));
-            } else {
-              next.quantidade_recomendada_ia = Math.max(item.quantidade_minima, Math.ceil(mediaDiaria * 14));
-            }
-            return next;
-          }),
-        );
-      },
-      addPushAlert,
     }),
-    [addPushAlert, alerts, analysis, bootstrapped, confirmRegistration, deliveries, error, items, login, logout, refreshData, register, transfers, user, users,   fornecedores,
-      hospitaisParceiros,
-      eventosRisco,
-      casosClinicos,
-      notificationToken,
-      syncWithDatabase,],
+    [bootstrapped, user, items, alerts, deliveries, transfers, analysis, error, login, register, confirmRegistration, logout, refreshData],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

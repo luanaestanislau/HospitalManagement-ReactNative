@@ -56,25 +56,15 @@ export function IaScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.bg,
-  },
-  content: {
-    padding: 16,
-    gap: 10,
-  },
+  container: { flex: 1, backgroundColor: colors.bg },
+  content: { padding: 16, gap: 10 },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 4,
   },
-  title: {
-    color: colors.text,
-    fontSize: 18,
-    fontWeight: '700',
-  },
+  title: { color: colors.text, fontSize: 18, fontWeight: '700' },
   card: {
     backgroundColor: colors.card,
     borderRadius: 12,
@@ -82,50 +72,13 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     padding: 12,
   },
-  cardTitle: {
-    color: colors.text,
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  bigScore: {
-    color: colors.warning,
-    fontSize: 34,
-    fontWeight: '700',
-    marginVertical: 6,
-  },
-  caption: {
-    marginTop: 6,
-    color: colors.muted,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  stat: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 12,
-  },
-  statValue: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#111827',
-  },
-  statLabel: {
-    color: '#64748B',
-    fontSize: 11,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  cardText: {
-    color: colors.muted,
-    marginTop: 4,
-    fontSize: 12,
-  },
+  cardTitle: { color: colors.text, fontWeight: '600', fontSize: 14 },
+  bigScore: { color: colors.warning, fontSize: 34, fontWeight: '700', marginVertical: 6 },
+  caption: { marginTop: 6, color: colors.muted },
+  statsRow: { flexDirection: 'row', gap: 8 },
+  stat: { flex: 1, backgroundColor: '#FFFFFF', borderRadius: 12, padding: 12 },
+  statValue: { fontSize: 22, fontWeight: '700', color: '#111827' },
+  statLabel: { color: '#64748B', fontSize: 11 },
+  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  cardText: { color: colors.muted, marginTop: 4, fontSize: 12 },
 });
-

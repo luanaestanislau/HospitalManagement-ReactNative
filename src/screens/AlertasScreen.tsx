@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { AlertCard } from '../components/AlertCard';
@@ -9,19 +9,29 @@ import { useApp } from '../context/AppContext';
 export function AlertasScreen() {
   const { alerts } = useApp();
   const [filter, setFilter] = useState<'todos' | 'critico' | 'atencao' | 'info'>('todos');
-  const filters: Array<{ key: typeof filter; label: string; count: number; variant: 'info' | 'critico' | 'atencao' }> = [
-    { key: 'todos', label: 'Todos', count: alerts.length, variant: 'info' },
-    { key: 'critico', label: 'Críticos', count: alerts.filter((item) => item.prioridade === 'critico').length, variant: 'critico' },
-    { key: 'atencao', label: 'Atenção', count: alerts.filter((item) => item.prioridade === 'atencao').length, variant: 'atencao' },
-    { key: 'info', label: 'Info', count: 0, variant: 'info' },
-  ];
 
-  const filtered = alerts.filter((alert) => {
-    if (filter === 'todos') return true;
-    return alert.prioridade === filter;
-  });
-  const criticalCount = filters[1].count;
-  const attentionCount = filters[2].count;
+  const filtered = useMemo(() => {
+    return alerts.filter((alert) => {
+      if (filter === 'todos') return true;
+      return alert.prioridade === filter;
+    });
+  }, [alerts, filter]);
+
+  const criticalCount = alerts.filter((item) => item.prioridade === 'critico').length;
+  const attentionCount = alerts.filter((item) => item.prioridade === 'atencao').length;
+  const infoCount = alerts.filter((item) => item.prioridade === 'info').length;
+
+  const filters: Array<{
+    key: typeof filter;
+    label: string;
+    count: number;
+    variant: 'info' | 'critico' | 'atencao';
+  }> = [
+    { key: 'todos', label: 'Todos', count: alerts.length, variant: 'info' },
+    { key: 'critico', label: 'Críticos', count: criticalCount, variant: 'critico' },
+    { key: 'atencao', label: 'Atenção', count: attentionCount, variant: 'atencao' },
+    { key: 'info', label: 'Info', count: infoCount, variant: 'info' },
+  ];
 
   return (
     <View style={styles.container}>
@@ -31,10 +41,14 @@ export function AlertasScreen() {
       </View>
 
       <View style={styles.filters}>
-        {filters.map(({ key, label, count, variant }) => {
+        {filters.map(({ key, label, count }) => {
           const active = filter === key;
           return (
-            <Pressable key={key} onPress={() => setFilter(key)} style={[styles.filterChip, active && styles.filterChipActive]}>
+            <Pressable
+              key={key}
+              onPress={() => setFilter(key)}
+              style={[styles.filterChip, active && styles.filterChipActive]}
+            >
               <Text style={[styles.filterText, active && styles.filterTextActive]}>{label}</Text>
               {count > 0 ? (
                 <View style={[styles.filterCount, active && styles.filterCountActive]}>
@@ -61,7 +75,15 @@ export function AlertasScreen() {
               title={alert.titulo}
               description={alert.descricao}
               variant={alert.prioridade === 'critico' ? 'critico' : alert.prioridade === 'atencao' ? 'atencao' : 'info'}
-              badgeLabel={alert.tipo === 'estoque_critico' ? 'CRÍTICO' : alert.tipo === 'validade' ? 'VALIDADE' : alert.tipo === 'atraso_entrega' ? 'LOGÍSTICA' : 'AVISO'}
+              badgeLabel={
+                alert.tipo === 'estoque_critico'
+                  ? 'CRÍTICO'
+                  : alert.tipo === 'validade'
+                    ? 'VALIDADE'
+                    : alert.tipo === 'atraso_entrega'
+                      ? 'LOGÍSTICA'
+                      : 'AVISO'
+              }
               actions={alert.acoes.map((action) => ({ label: action, primary: action === 'Repor' }))}
             />
           ))
@@ -72,10 +94,7 @@ export function AlertasScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.bg,
-  },
+  container: { flex: 1, backgroundColor: colors.bg },
   header: {
     backgroundColor: colors.card,
     borderBottomWidth: StyleSheet.hairlineWidth,
@@ -86,11 +105,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  title: {
-    color: colors.text,
-    fontSize: 18,
-    fontWeight: '700',
-  },
+  title: { color: colors.text, fontSize: 18, fontWeight: '700' },
   filters: {
     backgroundColor: colors.card,
     paddingHorizontal: 16,
@@ -109,17 +124,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  filterChipActive: {
-    backgroundColor: colors.primary,
-  },
-  filterText: {
-    color: colors.muted,
-    fontSize: 13,
-  },
-  filterTextActive: {
-    color: colors.primarySoftBg,
-    fontWeight: '500',
-  },
+  filterChipActive: { backgroundColor: colors.primary },
+  filterText: { color: colors.muted, fontSize: 13 },
+  filterTextActive: { color: colors.primarySoftBg, fontWeight: '500' },
   filterCount: {
     marginTop: 4,
     paddingHorizontal: 5,
@@ -127,31 +134,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: 'rgba(255,255,255,0.10)',
   },
-  filterCountActive: {
-    backgroundColor: colors.primary,
-  },
-  filterCountText: {
-    color: colors.muted,
-    fontSize: 10,
-    fontWeight: '500',
-  },
-  filterCountTextActive: {
-    color: colors.text,
-  },
-  list: {
-    padding: 16,
-    gap: 8,
-  },
-  empty: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 48,
-  },
-  emptyIcon: {
-    fontSize: 48,
-  },
-  emptyText: {
-    marginTop: 12,
-    color: colors.muted,
-  },
+  filterCountActive: { backgroundColor: colors.primary },
+  filterCountText: { color: colors.muted, fontSize: 10, fontWeight: '500' },
+  filterCountTextActive: { color: colors.text },
+  list: { padding: 16, gap: 8 },
+  empty: { alignItems: 'center', justifyContent: 'center', paddingVertical: 48 },
+  emptyIcon: { fontSize: 48 },
+  emptyText: { marginTop: 12, color: colors.muted },
 });

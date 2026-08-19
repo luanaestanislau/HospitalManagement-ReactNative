@@ -26,11 +26,11 @@ export function LoginScreen({ navigation }: Props) {
   }, [email]);
 
   const onLogin = async () => {
-    const success = await login(email.trim(), password);
-    if (success) {
-      navigation.navigate('Matricula');
-    }
-  };
+  const success = await login(email.trim(), password);
+  if (success) {
+    navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
+  }
+ };
 
   useEffect(() => {
     if (authenticated) {

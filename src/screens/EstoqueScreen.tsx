@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Badge, SectionDivider } from '../components/Badge';
 import { ScoreBar } from '../components/ScoreBar';
@@ -7,7 +7,7 @@ import { colors } from '../theme/colors';
 import { useApp } from '../context/AppContext';
 
 export function EstoqueScreen() {
-  const { items, recalculateStock } = useApp();
+  const { items } = useApp();
 
   return (
     <View style={styles.container}>
@@ -15,6 +15,7 @@ export function EstoqueScreen() {
         <Text style={styles.title}>Estoque</Text>
         <Badge label={`${items.filter((item) => item.status === 'critico').length} críticos`} variant="critico" />
       </View>
+
       <ScrollView contentContainerStyle={styles.content}>
         <SectionDivider label="Itens prioritários" />
         {items.map((item) => (
@@ -31,12 +32,10 @@ export function EstoqueScreen() {
                 variant={item.status === 'critico' ? 'critico' : item.status === 'atencao' ? 'atencao' : 'normal'}
               />
             </View>
+
             <View style={styles.spacing} />
             <ScoreBar score={item.quantidade_atual} max={item.quantidade_minima * 3} />
             <Text style={styles.local}>Local: {item.local_armazenamento ?? 'Não definido'}</Text>
-            <Pressable onPress={() => recalculateStock(item.id)} style={styles.button}>
-              <Text style={styles.buttonText}>Recalcular</Text>
-            </Pressable>
           </View>
         ))}
       </ScrollView>
@@ -45,10 +44,7 @@ export function EstoqueScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.bg,
-  },
+  container: { flex: 1, backgroundColor: colors.bg },
   header: {
     backgroundColor: colors.card,
     borderBottomWidth: StyleSheet.hairlineWidth,
@@ -59,14 +55,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  title: {
-    color: colors.text,
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  content: {
-    padding: 16,
-  },
+  title: { color: colors.text, fontSize: 18, fontWeight: '700' },
+  content: { padding: 16 },
   card: {
     backgroundColor: colors.card,
     borderWidth: StyleSheet.hairlineWidth,
@@ -75,40 +65,9 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 10,
   },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  itemName: {
-    color: colors.text,
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  itemMeta: {
-    marginTop: 4,
-    color: colors.muted,
-    fontSize: 12,
-  },
-  spacing: {
-    height: 8,
-  },
-  local: {
-    marginTop: 8,
-    color: colors.muted,
-    fontSize: 12,
-  },
-  button: {
-    marginTop: 10,
-    borderWidth: 1,
-    borderColor: colors.primary,
-    borderRadius: 10,
-    alignItems: 'center',
-    paddingVertical: 10,
-  },
-  buttonText: {
-    color: colors.primarySoftBg,
-    fontWeight: '600',
-  },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  itemName: { color: colors.text, fontWeight: '600', fontSize: 14 },
+  itemMeta: { marginTop: 4, color: colors.muted, fontSize: 12 },
+  spacing: { height: 8 },
+  local: { marginTop: 8, color: colors.muted, fontSize: 12 },
 });
-
