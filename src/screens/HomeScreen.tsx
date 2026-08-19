@@ -3,8 +3,8 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 
 import { AlertCard } from '../components/AlertCard';
 import { AiBadge, Badge } from '../components/Badge';
-import { colors } from '../theme/colors';
 import { useApp } from '../context/AppContext';
+import { colors } from '../theme/colors';
 
 export function HomeScreen() {
   const { user, alerts, items, analysis, deliveries, logout, refreshData } = useApp();
@@ -33,7 +33,7 @@ export function HomeScreen() {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content} refreshControl={null}>
+      <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.sectionTitleRow}>
           <Text style={styles.sectionTitle}>Alertas ativos</Text>
           <Badge label={`${criticalCount} críticos`} variant="critico" />

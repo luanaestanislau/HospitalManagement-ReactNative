@@ -12,7 +12,19 @@ import {
   StockItem,
   Transfer,
   User,
+  Fornecedor, 
+  HospitalParceiro, 
+  EventoRisco, 
+  CasoClinico,
+  initialFornecedores,
+  initialHospitaisParceiros,
+  initialEventosRisco,
+  initialCasosClinicos,
 } from '../data/mockData';
+
+import NotificationService from '../services/NotificationService';
+import { DatabaseService } from '../services/DatabaseService';
+import IaService from '../services/IaService';
 
 type Analysis = {
   scoreInterno: number;
@@ -51,6 +63,12 @@ type AppContextValue = {
   refreshData: () => void;
   recalculateStock: (itemId: number) => void;
   addPushAlert: (titulo: string, descricao: string, prioridade?: AlertItem['prioridade'], tipo?: AlertItem['tipo']) => void;
+  fornecedores: Fornecedor[];
+  hospitaisParceiros: HospitalParceiro[];
+  eventosRisco: EventoRisco[];
+  casosClinicos: CasoClinico[];
+  notificationToken: string | null;
+  syncWithDatabase: () => Promise<void>;
 };
 
 const STORAGE_KEY = 'medistock.currentUser';
@@ -170,11 +188,90 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [transfers] = useState<Transfer[]>(initialTransfers);
   const [pushAlerts, setPushAlerts] = useState<AlertItem[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [fornecedores, setFornecedores] = useState<Fornecedor[]>(initialFornecedores);
+  const [hospitaisParceiros, setHospitaisParceiros] = useState<HospitalParceiro[]>(initialHospitaisParceiros);
+  const [eventosRisco, setEventosRisco] = useState<EventoRisco[]>(initialEventosRisco);
+  const [casosClinicos, setCasosClinicos] = useState<CasoClinico[]>(initialCasosClinicos);
+  const [notificationToken, setNotificationToken] = useState<string | null>(null);
 
   const user = useMemo(
     () => users.find((entry) => entry.email === currentEmail) ?? null,
     [currentEmail, users],
   );
+
+  useEffect(() => {
+    (async () => {
+      await DatabaseService.initialize();
+      
+      await NotificationService.initialize();
+      setNotificationToken(NotificationService.getToken());
+
+      NotificationService.setupListeners(
+        (alert) => addPushAlert(alert.titulo, alert.descricao, alert.prioridade, alert.tipo),
+        () => {
+        }
+      );
+
+      await syncWithDatabase();
+    })();
+  }, []);
+
+  const syncWithDatabase = useCallback(async () => {
+    try {
+      // Sincronizar itens
+      const itemsDb = await DatabaseService.getItems();
+      if (itemsDb.length > 0) {
+        setItems(itemsDb);
+      } else {
+        // Salvar items iniciais no DB
+        for (const item of items) {
+          await DatabaseService.insertItem(item);
+        }
+      }
+
+      // Sincronizar fornecedores
+      const fornecedoresDb = await DatabaseService.getFornecedores();
+      if (fornecedoresDb.length > 0) {
+        setFornecedores(fornecedoresDb);
+      } else {
+        for (const f of fornecedores) {
+          await DatabaseService.insertFornecedor(f);
+        }
+      }
+
+      // Sincronizar hospitais
+      const hospitaisDb = await DatabaseService.getHospitais();
+      if (hospitaisDb.length > 0) {
+        setHospitaisParceiros(hospitaisDb);
+      } else {
+        for (const h of hospitaisParceiros) {
+          await DatabaseService.insertHospital(h);
+        }
+      }
+
+      // Sincronizar eventos de risco
+      const eventosDb = await DatabaseService.getEventosRisco();
+      if (eventosDb.length > 0) {
+        setEventosRisco(eventosDb);
+      } else {
+        for (const e of eventosRisco) {
+          await DatabaseService.insertEventoRisco(e);
+        }
+      }
+
+      // Sincronizar casos clínicos
+      const casosDb = await DatabaseService.getCasosClinicos();
+      if (casosDb.length > 0) {
+        setCasosClinicos(casosDb);
+      } else {
+        for (const c of casosClinicos) {
+          await DatabaseService.insertCasoClinico(c);
+        }
+      }
+    } catch (error) {
+      console.warn('Erro ao sincronizar com DB:', error);
+    }
+  }, [items, fornecedores, hospitaisParceiros, eventosRisco, casosClinicos]);
 
   const derivedAlerts = useMemo(() => deriveAlerts(items), [items]);
   const alerts = useMemo(() => [...pushAlerts, ...derivedAlerts], [pushAlerts, derivedAlerts]);
@@ -307,6 +404,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       transfers,
       analysis,
       error,
+      fornecedores,
+      hospitaisParceiros,
+      eventosRisco,
+      casosClinicos,
+      notificationToken,
+      syncWithDatabase,
       login,
       register,
       confirmRegistration,
@@ -336,7 +439,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       },
       addPushAlert,
     }),
-    [addPushAlert, alerts, analysis, bootstrapped, confirmRegistration, deliveries, error, items, login, logout, refreshData, register, transfers, user, users],
+    [addPushAlert, alerts, analysis, bootstrapped, confirmRegistration, deliveries, error, items, login, logout, refreshData, register, transfers, user, users,   fornecedores,
+      hospitaisParceiros,
+      eventosRisco,
+      casosClinicos,
+      notificationToken,
+      syncWithDatabase,],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

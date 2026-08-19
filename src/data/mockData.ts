@@ -208,3 +208,139 @@ export const initialTransfers: Transfer[] = [
   },
 ];
 
+export type Fornecedor = {
+  id: number;
+  nome: string;
+  cnpj: string;
+  contato: string;
+  score_confiabilidade: number;
+  historico_atrasos: number;
+};
+
+export type HospitalParceiro = {
+  id: number;
+  nome: string;
+  cidade: string;
+  latitude: number;
+  longitude: number;
+  contato: string;
+};
+
+export type EventoRisco = {
+  id: number;
+  tipo: string;
+  descricao: string;
+  data_inicio: string;
+  data_fim?: string;
+  status: 'ativo' | 'resolvido';
+  prejuizo_real?: number;
+  acoes_executadas?: string[];
+};
+
+export type CasoClinico = {
+  id: number;
+  especialidade: 'oncologia' | 'cardiologia' | 'neurologia' | 'emergencia' | 'outro';
+  descricao: string;
+  item_id: number;
+  quantidade_necessaria: number;
+  custo_estimado: number;
+  prioridade: 'alta' | 'media' | 'baixa';
+  frequencia_anual: number;
+};
+
+// Dados iniciais
+export const initialFornecedores: Fornecedor[] = [
+  {
+    id: 1,
+    nome: 'ForneceMed',
+    cnpj: '00.000.000/0001-10',
+    contato: 'contato@fornecemed.com',
+    score_confiabilidade: 82,
+    historico_atrasos: 3,
+  },
+  {
+    id: 2,
+    nome: 'MediSupply',
+    cnpj: '00.000.000/0001-20',
+    contato: 'suporte@medisupply.com',
+    score_confiabilidade: 94,
+    historico_atrasos: 1,
+  },
+  {
+    id: 3,
+    nome: 'PharmaExpress',
+    cnpj: '00.000.000/0001-30',
+    contato: 'vendas@pharmaexpress.com',
+    score_confiabilidade: 78,
+    historico_atrasos: 5,
+  },
+];
+
+export const initialHospitaisParceiros: HospitalParceiro[] = [
+  {
+    id: 1,
+    nome: 'HC Unicamp',
+    cidade: 'Campinas',
+    latitude: -22.821,
+    longitude: -47.064,
+    contato: '(19) 3521-7000',
+  },
+  {
+    id: 2,
+    nome: 'Santa Casa de Campinas',
+    cidade: 'Campinas',
+    latitude: -22.903,
+    longitude: -47.062,
+    contato: '(19) 3756-6000',
+  },
+  {
+    id: 3,
+    nome: 'Hospital Mário Gatti',
+    cidade: 'Campinas',
+    latitude: -22.886,
+    longitude: -47.046,
+    contato: '(19) 3772-5700',
+  },
+];
+
+export const initialEventosRisco: EventoRisco[] = [
+  {
+    id: 1,
+    tipo: 'atraso_entrega',
+    descricao: 'Atraso logístico no fornecedor ForneceMed',
+    data_inicio: new Date().toISOString(),
+    status: 'ativo',
+    prejuizo_real: 5000,
+  },
+  {
+    id: 2,
+    tipo: 'extravio_reembolso',
+    descricao: 'Extravio durante transferência entre CDs',
+    data_inicio: new Date().toISOString(),
+    status: 'ativo',
+    prejuizo_real: 30000,
+  },
+];
+
+export const initialCasosClinicos: CasoClinico[] = [
+  {
+    id: 1,
+    especialidade: 'oncologia',
+    descricao: 'Melanoma metastático stage IV - tratamento imunoterápico',
+    item_id: 4,
+    quantidade_necessaria: 4,
+    custo_estimado: 42000,
+    prioridade: 'alta',
+    frequencia_anual: 12,
+  },
+  {
+    id: 2,
+    especialidade: 'neurologia',
+    descricao: 'AVC isquêmico agudo < 4.5h - candidato trombólise',
+    item_id: 5,
+    quantidade_necessaria: 1,
+    custo_estimado: 15000,
+    prioridade: 'alta',
+    frequencia_anual: 48,
+  },
+];
