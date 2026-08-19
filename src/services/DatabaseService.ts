@@ -1,7 +1,5 @@
-// Database service - Mock implementation (SQLite disabled)
-import { StockItem, Fornecedor, HospitalParceiro, EventoRisco, CasoClinico } from '../data/mockData';
+import { CasoClinico, EventoRisco, Fornecedor, HospitalParceiro, StockItem } from '../data/mockData';
 
-// Note: expo-sqlite is not installed, using mock data instead
 export class DatabaseService {
   static async initialize(): Promise<void> {
     return Promise.resolve();

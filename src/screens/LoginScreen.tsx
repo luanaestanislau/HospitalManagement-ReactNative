@@ -30,7 +30,7 @@ export function LoginScreen({ navigation }: Props) {
   if (success) {
     navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
   }
- };
+};
 
   useEffect(() => {
     if (authenticated) {

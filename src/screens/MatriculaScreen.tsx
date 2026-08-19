@@ -1,12 +1,12 @@
-import React, { useEffect } from 'react';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import React, { useEffect } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import type { RootStackParamList } from '../../App';
 import { AuthHeader } from '../components/AuthHeader';
 import { LoadingOverlay } from '../components/LoadingOverlay';
-import { colors } from '../theme/colors';
 import { useApp } from '../context/AppContext';
-import type { RootStackParamList } from '../../App';
+import { colors } from '../theme/colors';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Matricula'>;
 
@@ -38,7 +38,7 @@ export function MatriculaScreen({ navigation }: Props) {
           ['E-mail', user?.email ?? ''],
           ['Departamento', user?.departamento ?? ''],
           ['Cargo / Função', user?.cargo ?? ''],
-          ['Registro profissional', user?.registro ?? ''],
+          ['Registro profissional', user?.registroProfissional ?? ''],
         ].map(([label, value]) => (
           <View key={label} style={styles.field}>
             <Text style={styles.fieldLabel}>{label}</Text>

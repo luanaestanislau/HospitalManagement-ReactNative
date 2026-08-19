@@ -1,6 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL = (globalThis as any).process?.env?.EXPO_PUBLIC_API_URL ?? 'http://localhost:8080/api/v1';
+declare const process: { env: { EXPO_PUBLIC_API_URL?: string } };
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8080/api/v1';
 const TOKEN_KEY = 'medistock.token';
 
 export class ApiError extends Error {

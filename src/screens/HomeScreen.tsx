@@ -12,7 +12,7 @@ export function HomeScreen() {
 
   const initials = useMemo(() => {
     const parts = user?.nome?.split(' ').slice(0, 2) ?? [];
-    return parts.map((part) => part[0]).join('') || 'AS';
+    return parts.map((part: string) => part[0]).join('') || 'AS';
   }, [user?.nome]);
 
   const criticalCount = alerts.filter((alert) => alert.prioridade === 'critico').length;
@@ -97,7 +97,7 @@ export function HomeScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={styles.profileName}>{user?.nome ?? 'Usuário'}</Text>
                 <Text style={styles.profileSmall}>{user?.cargo ?? ''}</Text>
-                <Text style={styles.profileSmall}>{user?.hospital ?? ''} · {user?.registro ?? ''}</Text>
+                <Text style={styles.profileSmall}>{user?.hospital ?? ''} · {user?.registroProfissional ?? ''}</Text>
               </View>
             </View>
 
