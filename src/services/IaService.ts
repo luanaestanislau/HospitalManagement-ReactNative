@@ -1,6 +1,3 @@
-// src/services/IaService.ts - Mock implementation
-// import { httpsCallable, functions } from '@react-native-firebase/functions';
-
 export interface AnalisysResult {
   scoreInterno: number;
   classificacao: string;
@@ -33,7 +30,6 @@ export interface ResilienceResult {
 }
 
 class IaService {
-  // Mock implementation - Firebase Functions not installed
   static async analisarResiliencia(_dados: any): Promise<ResilienceResult> {
     return Promise.resolve({
       scoreResiliencia: 85,

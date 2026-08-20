@@ -1,5 +1,3 @@
-// src/services/MapService.ts (NOVO)
-
 export interface Location {
   latitude: number;
   longitude: number;

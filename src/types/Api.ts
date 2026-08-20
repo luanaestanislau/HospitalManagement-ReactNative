@@ -1,6 +1,3 @@
-// Tipos da API medistock-api-main
-// Mapeamento direto dos DTOs do backend Java Spring Boot
-
 // ============= AUTH =============
 export type ApiTokenResponse = {
   token: string;

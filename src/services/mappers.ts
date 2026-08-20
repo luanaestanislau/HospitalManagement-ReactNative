@@ -1,4 +1,3 @@
-// Mapeadores: converte dados da API para o formato usado no app
 import type { AlertItem, Delivery, StockItem, Transfer, User } from '../data/mockData';
 import type {
     ApiAlertaResponse,

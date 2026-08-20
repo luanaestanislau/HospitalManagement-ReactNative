@@ -167,8 +167,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setDeliveries((dashboard.pedidosDoDia ?? []).map(mapPedidoToDelivery));
     setAnalysis(buildAnalysisFromDashboard(dashboard));
 
-    // Se o backend ainda não entregar itens e transferências no dashboard,
-    // deixa vazio ou trata em endpoints próprios no futuro.
     setItems([]);
     setTransfers([]);
   }, []);
