@@ -11,19 +11,19 @@ import type { RootStackParamList } from '../../App';
 type Props = NativeStackScreenProps<RootStackParamList, 'Cadastro'>;
 
 export function CadastroScreen({ navigation }: Props) {
-  const { register, error } = useApp();
+  const { register, error, loading } = useApp();
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
 
   const onRegister = async () => {
-    if (!nome || !email || senha.length < 6) return;
+    if (!nome || !email || senha.length < 8) return;
     const ok = await register(nome.trim(), email.trim(), senha);
     if (ok) navigation.replace('Login');
   };
 
   return (
-    <LoadingOverlay loading={false}>
+    <LoadingOverlay loading={loading}>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         <Pressable onPress={() => navigation.goBack()}>
           <Text style={styles.back}>←</Text>
@@ -37,9 +37,9 @@ export function CadastroScreen({ navigation }: Props) {
         <TextInput value={email} onChangeText={setEmail} placeholder="nome@hospital.com" autoCapitalize="none" style={styles.input} />
 
         <Text style={styles.label}>Senha</Text>
-        <TextInput value={senha} onChangeText={setSenha} placeholder="Mínimo 6 caracteres" secureTextEntry style={styles.input} />
+        <TextInput value={senha} onChangeText={setSenha} placeholder="Mínimo 8 caracteres" secureTextEntry style={styles.input} />
 
-        <Pressable onPress={onRegister} style={styles.primaryButton}>
+        <Pressable onPress={onRegister} disabled={loading} style={[styles.primaryButton, loading && styles.disabledButton]}>
           <Text style={styles.primaryButtonText}>Cadastrar</Text>
         </Pressable>
         {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -89,9 +89,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  disabledButton: {
+    opacity: 0.6,
+  },
   error: {
     marginTop: 8,
     color: colors.danger,
   },
 });
-

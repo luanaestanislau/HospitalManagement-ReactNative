@@ -1,6 +1,6 @@
 import React from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 
 import { colors } from '../theme/colors';
 
@@ -15,6 +15,7 @@ export function AuthHeader({
 }) {
   return (
     <View style={styles.container}>
+      <Image source={require('../../assets/images/splash-icon.png')} style={styles.brandImage} accessibilityLabel="Logo MediStock" />
       <View style={styles.iconBox}>
         <Ionicons name={icon} size={30} color={colors.primarySoft} />
       </View>
@@ -36,6 +37,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  brandImage: {
+    width: 42,
+    height: 42,
+    marginBottom: 12,
+    resizeMode: 'contain',
+  },
   title: {
     marginTop: 32,
     fontSize: 30,
@@ -52,4 +59,3 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
 });
-

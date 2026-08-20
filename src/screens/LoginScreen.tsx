@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AuthHeader } from '../components/AuthHeader';
 import { LoadingOverlay } from '../components/LoadingOverlay';
@@ -12,7 +13,7 @@ import type { RootStackParamList } from '../../App';
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
 export function LoginScreen({ navigation }: Props) {
-  const { login, error, authenticated } = useApp();
+  const { login, error, loading } = useApp();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [visible, setVisible] = useState(false);
@@ -26,21 +27,15 @@ export function LoginScreen({ navigation }: Props) {
   }, [email]);
 
   const onLogin = async () => {
-  const success = await login(email.trim(), password);
-  if (success) {
-    navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
-  }
-};
-
-  useEffect(() => {
-    if (authenticated) {
-      navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
+    const success = await login(email.trim(), password);
+    if (success) {
+      navigation.reset({ index: 0, routes: [{ name: 'Matricula' }] });
     }
-  }, [authenticated, navigation]);
+  };
 
   return (
-    <LoadingOverlay loading={false}>
-      <View style={styles.container}>
+    <LoadingOverlay loading={loading}>
+      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
         <View style={styles.header}>
           <Pressable onPress={() => navigation.goBack()}>
             <Text style={styles.back}>←</Text>
@@ -90,13 +85,13 @@ export function LoginScreen({ navigation }: Props) {
 
           <View style={{ flex: 1 }} />
 
-          <Pressable onPress={onLogin} style={styles.primaryButton}>
+          <Pressable onPress={onLogin} disabled={loading} style={[styles.primaryButton, loading && styles.disabledButton]}>
             <Text style={styles.primaryButtonText}>Verificar e continuar</Text>
           </Pressable>
           {error ? <Text style={styles.error}>{error}</Text> : null}
         </View>
-      </View>
-    </LoadingOverlay>
+      </SafeAreaView>
+     </LoadingOverlay>
   );
 }
 
@@ -179,6 +174,9 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: 16,
     fontWeight: '500',
+  },
+  disabledButton: {
+    opacity: 0.6,
   },
   error: {
     marginTop: 8,

@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
-import { apiFetch, clearToken, saveToken } from '../services/api';
+import { ApiError, apiFetch, clearToken, saveToken } from '../services/api';
 import type {
   ApiAlertaResponse,
   ApiDashboardResponse,
@@ -72,6 +72,7 @@ type Analysis = {
 
 type AppContextValue = {
   bootstrapped: boolean;
+  loading: boolean;
   authenticated: boolean;
   user: ApiUsuarioResponse | null;
   items: StockItem[];
@@ -145,6 +146,7 @@ function buildAnalysisFromDashboard(dashboard: ApiDashboardResponse): Analysis {
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [bootstrapped, setBootstrapped] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<ApiUsuarioResponse | null>(null);
   const [items, setItems] = useState<StockItem[]>([]);
   const [alerts, setAlerts] = useState<AlertItem[]>([]);
@@ -178,6 +180,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     setError(null);
+    setLoading(true);
     try {
       const data = await apiFetch<{ token: string; usuario: ApiUsuarioResponse }>('/auth/login', {
         method: 'POST',
@@ -188,25 +191,36 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       await AsyncStorage.setItem(STORAGE_KEY, data.usuario.email);
       setUser(data.usuario);
 
-      await loadDashboard();
+      // O usuário já está autenticado mesmo se o dashboard estiver indisponível.
+      // A tela pode tentar novamente por meio de refreshData.
+      try {
+        await loadDashboard();
+      } catch (dashboardError) {
+        console.warn('Login concluído, mas o dashboard não pôde ser carregado:', dashboardError);
+      }
       return true;
-    } catch {
-      setError('E-mail ou senha incorretos.');
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Não foi possível concluir o login.');
       return false;
+    } finally {
+      setLoading(false);
     }
   }, [loadDashboard]);
 
   const register = useCallback(async (nome: string, email: string, senha: string) => {
     setError(null);
+    setLoading(true);
     try {
       await apiFetch('/auth/registro', {
         method: 'POST',
         body: JSON.stringify({ nome, email, senha }),
       });
       return true;
-    } catch {
-      setError('Erro ao cadastrar. Tente novamente.');
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Erro ao cadastrar. Tente novamente.');
       return false;
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -269,6 +283,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo<AppContextValue>(
     () => ({
       bootstrapped,
+      loading,
       authenticated: Boolean(user),
       user,
       items,
@@ -283,7 +298,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       logout,
       refreshData,
     }),
-    [bootstrapped, user, items, alerts, deliveries, transfers, analysis, error, login, register, confirmRegistration, logout, refreshData],
+    [bootstrapped, loading, user, items, alerts, deliveries, transfers, analysis, error, login, register, confirmRegistration, logout, refreshData],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

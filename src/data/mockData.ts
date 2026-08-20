@@ -58,6 +58,7 @@ export type Transfer = {
 };
 
 export const institutionalDomains = {
+  'fiap.com.br': 'FIAP',
   'hc.unicamp.br': 'Hospital das Clínicas — Unicamp',
   'hc.usp.br': 'Hospital das Clínicas — USP',
   'einstein.br': 'Hospital Albert Einstein',

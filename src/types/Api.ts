@@ -20,7 +20,7 @@ export type ApiUsuarioResponse = {
   criadoEm: string;
 };
 
-export type PerfilUsuario = 'ADMIN' | 'GESTOR' | 'FARMACEUTICO' | 'TECNICO' | 'MEDICO';
+export type PerfilUsuario = 'ADMIN' | 'GESTOR' | 'FARMACEUTICO' | 'ENFERMEIRO';
 
 // ============= DASHBOARD =============
 export type ApiDashboardResponse = {

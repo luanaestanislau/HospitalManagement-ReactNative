@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Button, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AuthHeader } from '../components/AuthHeader';
 import { colors } from '../theme/colors';
@@ -20,7 +21,8 @@ export function SplashScreen({ navigation }: Props) {
   }, [authenticated, bootstrapped, navigation]);
 
   return (
-    <View style={styles.container}>
+   <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+
       <ScrollView contentContainerStyle={styles.content}>
         <AuthHeader
           icon="medical-outline"
@@ -48,13 +50,14 @@ export function SplashScreen({ navigation }: Props) {
           <Pressable style={styles.primaryButton} onPress={() => navigation.navigate('Login')}>
             <Text style={styles.primaryButtonText}>Entrar</Text>
           </Pressable>
-          <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate('Login')}>
-            <Text style={styles.secondaryButtonText}>Saiba mais</Text>
-          </Pressable>
+          <View style={styles.secondaryButton}>
+            <Button title="Saiba mais" color={colors.primarySoftBg} onPress={() => {}} />
+          </View>
           <Text style={styles.version}>v1.0.0 · Seguro e conforme com a LGPD</Text>
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
+
   );
 }
 
@@ -108,7 +111,7 @@ const styles = StyleSheet.create({
   secondaryButton: {
     borderWidth: 1,
     borderColor: colors.primary,
-    paddingVertical: 16,
+    paddingVertical: 6,
     borderRadius: 12,
     alignItems: 'center',
   },
@@ -122,4 +125,3 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
 });
-

@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "../.."
+		},
+		{
+			"path": "../../../../Downloads/medistock-api-main"
+		},
+		{
+			"path": "../../../../AndroidStudioProjects/hospitalmanagement_flutter"
+		}
+	],
+	"settings": {}
+}
