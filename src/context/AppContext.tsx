@@ -191,8 +191,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       await AsyncStorage.setItem(STORAGE_KEY, data.usuario.email);
       setUser(data.usuario);
 
-      // O usuário já está autenticado mesmo se o dashboard estiver indisponível.
-      // A tela pode tentar novamente por meio de refreshData.
       try {
         await loadDashboard();
       } catch (dashboardError) {
@@ -206,6 +204,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     }
   }, [loadDashboard]);
+
+  const loadItens = useCallback(async () => {
+  const itens = await apiFetch<StockItem[]>('/itens', { method: 'GET' });
+  setItems(itens);
+  }, []);
+
+  const loadTransferencias = useCallback(async () => {
+  const transfers = await apiFetch<Transfer[]>('/logistica/transferencias', { method: 'GET' });
+  setTransfers(transfers);
+  }, []); 
 
   const register = useCallback(async (nome: string, email: string, senha: string) => {
     setError(null);
