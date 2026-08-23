@@ -1,5 +1,6 @@
 import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Badge, SectionDivider } from '../components/Badge';
 import { ScoreBar } from '../components/ScoreBar';
@@ -10,7 +11,7 @@ export function EstoqueScreen() {
   const { items } = useApp();
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.header}>
         <Text style={styles.title}>Estoque</Text>
         <Badge label={`${items.filter((item) => item.status === 'critico').length} críticos`} variant="critico" />
@@ -39,7 +40,7 @@ export function EstoqueScreen() {
           </View>
         ))}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 

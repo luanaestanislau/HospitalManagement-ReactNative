@@ -5,11 +5,13 @@ import { Badge, AiBadge } from '../components/Badge';
 import { ScoreBar } from '../components/ScoreBar';
 import { colors } from '../theme/colors';
 import { useApp } from '../context/AppContext';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export function IaScreen() {
   const { analysis } = useApp();
 
   return (
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.header}>
         <Text style={styles.title}>IA</Text>
@@ -52,6 +54,7 @@ export function IaScreen() {
         </View>
       ))}
     </ScrollView>
+    </SafeAreaView>
   );
 }
 

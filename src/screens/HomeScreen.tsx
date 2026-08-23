@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AlertCard } from '../components/AlertCard';
 import { AiBadge, Badge } from '../components/Badge';
@@ -22,7 +23,7 @@ export function HomeScreen() {
   const inRouteFirst = deliveries.find((delivery) => delivery.status === 'em_rota');
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.header}>
         <Text style={styles.title}>MediStock</Text>
         <View style={styles.headerActions}>
@@ -88,8 +89,8 @@ export function HomeScreen() {
 
       <Modal visible={profileOpen} transparent animationType="slide" onRequestClose={() => setProfileOpen(false)}>
         <View style={styles.modalBackdrop}>
-          <View style={styles.sheet}>
-            <View style={styles.sheetHandle} />
+          <Pressable style={styles.sheet} onPress={() => setProfileOpen(false)}>
+            <Pressable style={styles.sheetHandle}  onPress={() => setProfileOpen(false)}/>
             <View style={styles.profileRow}>
               <View style={styles.profileAvatar}>
                 <Text style={styles.profileAvatarText}>{initials}</Text>
@@ -119,10 +120,10 @@ export function HomeScreen() {
             >
               <Text style={styles.logoutText}>Sair da conta</Text>
             </Pressable>
-          </View>
+          </Pressable>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -303,6 +304,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingVertical: 12,
     alignItems: 'center',
+    marginBottom: 16,
   },
   logoutText: {
     color: colors.danger,

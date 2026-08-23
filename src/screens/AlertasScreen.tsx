@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AlertCard } from '../components/AlertCard';
 import { Badge } from '../components/Badge';
@@ -34,7 +35,7 @@ export function AlertasScreen() {
   ];
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.header}>
         <Text style={styles.title}>Alertas</Text>
         {criticalCount > 0 ? <Badge label={`${criticalCount} críticos`} variant="critico" /> : null}
@@ -89,7 +90,7 @@ export function AlertasScreen() {
           ))
         )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 

@@ -43,7 +43,9 @@ export function LoginScreen({ navigation }: Props) {
         </View>
 
         <View style={styles.content}>
-          <AuthHeader icon="business-outline" titulo="Acesso institucional" subtitulo="Use o e-mail fornecido pelo hospital" />
+          <View style={{ marginBottom: 32 }}>
+            <AuthHeader icon="business-outline" titulo="Acesso institucional" subtitulo="Use o e-mail fornecido pelo hospital" />
+          </View>
 
           <Text style={styles.label}>Email institucional</Text>
           <TextInput
@@ -103,6 +105,7 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 16,
     paddingTop: 8,
+    marginBottom: 0,
   },
   back: {
     color: colors.primarySoft,
@@ -111,7 +114,8 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 28,
-    paddingVertical: 32,
+    paddingVertical: 0,
+    paddingBottom: 32, 
   },
   label: {
     marginTop: 16,

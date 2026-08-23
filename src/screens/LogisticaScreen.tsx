@@ -4,11 +4,13 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Badge, SectionDivider } from '../components/Badge';
 import { useApp } from '../context/AppContext';
 import { colors } from '../theme/colors';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export function LogisticaScreen() {
   const { deliveries, transfers } = useApp();
 
   return (
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.header}>
         <Text style={styles.title}>Logística</Text>
@@ -56,6 +58,7 @@ export function LogisticaScreen() {
         </View>
       ))}
     </ScrollView>
+    </SafeAreaView>
   );
 }
 
