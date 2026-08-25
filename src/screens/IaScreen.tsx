@@ -1,59 +1,75 @@
 import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Badge, AiBadge } from '../components/Badge';
+import { AiBadge, Badge } from '../components/Badge';
 import { ScoreBar } from '../components/ScoreBar';
 import { colors } from '../theme/colors';
 import { useApp } from '../context/AppContext';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 export function IaScreen() {
-  const { analysis } = useApp();
+  const { analysis, items } = useApp();
+
+  const nomeDoItem = (itemId: string) => items.find((item) => item.id === itemId)?.nome ?? itemId;
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.header}>
-        <Text style={styles.title}>IA</Text>
-        <AiBadge />
-      </View>
-
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Análise interna</Text>
-        <Text style={styles.bigScore}>{analysis.scoreInterno}/100</Text>
-        <ScoreBar score={analysis.scoreInterno} />
-        <Text style={styles.caption}>{analysis.classificacao}</Text>
-      </View>
-
-      <View style={styles.statsRow}>
-        <View style={styles.stat}>
-          <Text style={styles.statValue}>{analysis.itensCriticos}</Text>
-          <Text style={styles.statLabel}>Críticos</Text>
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <View style={styles.header}>
+          <Text style={styles.title}>IA</Text>
+          <AiBadge />
         </View>
-        <View style={styles.stat}>
-          <Text style={styles.statValue}>{analysis.itensSemLocal}</Text>
-          <Text style={styles.statLabel}>Sem local</Text>
-        </View>
-        <View style={styles.stat}>
-          <Text style={styles.statValue}>{analysis.itensPrioritarios}</Text>
-          <Text style={styles.statLabel}>Prioritários</Text>
-        </View>
-      </View>
 
-      {analysis.recomendacoes.map((item) => (
-        <View key={item.item} style={styles.card}>
-          <View style={styles.row}>
-            <Text style={styles.cardTitle}>{item.item}</Text>
-            <Badge label={item.prioridade.toUpperCase()} variant={item.prioridade === 'alta' ? 'critico' : 'atencao'} />
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Análise interna</Text>
+          <Text style={styles.bigScore}>{analysis.scoreInterno}/100</Text>
+          <ScoreBar score={analysis.scoreInterno} />
+          <Text style={styles.caption}>{analysis.classificacao}</Text>
+        </View>
+
+        <View style={styles.statsRow}>
+          <View style={styles.stat}>
+            <Text style={styles.statValue}>{analysis.itensCriticos}</Text>
+            <Text style={styles.statLabel}>Críticos</Text>
           </View>
-          <Text style={styles.cardText}>Atual: {item.localAtual}</Text>
-          <Text style={styles.cardText}>Sugerido: {item.localSugerido}</Text>
-          <Text style={styles.cardText}>Qtd sugerida: {item.quantidadeSugerida}</Text>
-          <Text style={styles.cardText}>Tempo estimado: {item.tempoTransferencia} min</Text>
-          <Text style={styles.cardText}>{item.motivo}</Text>
+          <View style={styles.stat}>
+            <Text style={styles.statValue}>{analysis.itensPrioritarios}</Text>
+            <Text style={styles.statLabel}>Prioritários</Text>
+          </View>
+          <View style={styles.stat}>
+            <Text style={styles.statValue}>{analysis.previsoes.length}</Text>
+            <Text style={styles.statLabel}>Previsões geradas</Text>
+          </View>
         </View>
-      ))}
-    </ScrollView>
+
+        {analysis.previsoes.length === 0 ? (
+          <View style={styles.empty}>
+            <Text style={styles.emptyText}>Nenhuma previsão de IA disponível no momento.</Text>
+          </View>
+        ) : (
+          analysis.previsoes.map((previsao) => {
+            const confiancaPct = Math.round((previsao.confianca ?? 0) * 100);
+            return (
+              <View key={previsao.itemId} style={styles.card}>
+                <View style={styles.row}>
+                  <Text style={styles.cardTitle}>{nomeDoItem(previsao.itemId)}</Text>
+                  <Badge
+                    label={`${confiancaPct}% confiança`}
+                    variant={confiancaPct >= 70 ? 'normal' : confiancaPct >= 40 ? 'atencao' : 'critico'}
+                  />
+                </View>
+                <Text style={styles.cardText}>
+                  Demanda projetada: {previsao.demandaProjetada} un. em {previsao.diasProjetados} dias
+                </Text>
+                <Text style={styles.cardText}>Média móvel simples: {previsao.mediaMovelSimples}</Text>
+                <Text style={[styles.cardText, { color: colors.warning }]}>
+                  Sugestão de compra: {previsao.sugestaoCompra} un.
+                </Text>
+              </View>
+            );
+          })
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -84,4 +100,6 @@ const styles = StyleSheet.create({
   statLabel: { color: '#64748B', fontSize: 11 },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   cardText: { color: colors.muted, marginTop: 4, fontSize: 12 },
+  empty: { alignItems: 'center', paddingVertical: 32 },
+  emptyText: { color: colors.muted, fontSize: 12 },
 });

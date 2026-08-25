@@ -10,7 +10,7 @@ export type User = {
 };
 
 export type StockItem = {
-  id: number;
+  id: string;
   nome: string;
   tipo: 'primordial' | 'essencial_baixa_demanda';
   categoria?: string;
@@ -23,17 +23,17 @@ export type StockItem = {
 };
 
 export type AlertItem = {
-  id: number;
+  id: string;
   tipo: 'estoque_critico' | 'validade' | 'atraso_entrega' | 'push' | 'ia';
   prioridade: 'critico' | 'atencao' | 'info';
   titulo: string;
   descricao: string;
-  item_id?: number;
+  item_id?: string;
   acoes: string[];
 };
 
 export type Delivery = {
-  id: number;
+  id: string;
   codigo: string;
   fornecedor: string;
   status: 'atrasado' | 'em_rota' | 'extravio_reembolso' | 'nao_entregue' | 'entregue';
@@ -47,7 +47,7 @@ export type Delivery = {
 };
 
 export type Transfer = {
-  id: number;
+  id: string;
   origem: string;
   destino: string;
   item: string;
@@ -81,7 +81,7 @@ export const initialUsers: User[] = [
 
 export const initialItems: StockItem[] = [
   {
-    id: 1,
+    id: '1',
     nome: 'Soro Fisiológico 500ml',
     tipo: 'primordial',
     quantidade_atual: 18,
@@ -91,7 +91,7 @@ export const initialItems: StockItem[] = [
     historico_consumo: [12, 14, 15, 13, 16, 17, 18],
   },
   {
-    id: 2,
+    id: '2',
     nome: 'Seringa 10ml',
     tipo: 'primordial',
     quantidade_atual: 340,
@@ -101,7 +101,7 @@ export const initialItems: StockItem[] = [
     historico_consumo: [22, 21, 23, 25, 24, 22, 26],
   },
   {
-    id: 3,
+    id: '3',
     nome: 'Luva Estéril S',
     tipo: 'primordial',
     quantidade_atual: 820,
@@ -111,7 +111,7 @@ export const initialItems: StockItem[] = [
     historico_consumo: [6, 7, 5, 8, 6, 7, 6],
   },
   {
-    id: 4,
+    id: '4',
     nome: 'Epinefrina 1mg/ml',
     tipo: 'essencial_baixa_demanda',
     quantidade_atual: 8,
@@ -122,7 +122,7 @@ export const initialItems: StockItem[] = [
     historico_consumo: [1, 0, 2, 1, 1, 1, 1],
   },
   {
-    id: 5,
+    id: '5',
     nome: 'Morfina 10mg/ml',
     tipo: 'essencial_baixa_demanda',
     quantidade_atual: 5,
@@ -136,7 +136,7 @@ export const initialItems: StockItem[] = [
 
 export const initialDeliveries: Delivery[] = [
   {
-    id: 38,
+    id: '38',
     codigo: '#OG038',
     fornecedor: 'ForneceMed',
     status: 'atrasado',
@@ -145,7 +145,7 @@ export const initialDeliveries: Delivery[] = [
     item: 'Soro Fisiológico 500ml',
   },
   {
-    id: 41,
+    id: '41',
     codigo: '#OG041',
     fornecedor: 'MediSupply',
     status: 'em_rota',
@@ -154,7 +154,7 @@ export const initialDeliveries: Delivery[] = [
     item: 'Seringa 5ml · 500 un',
   },
   {
-    id: 48,
+    id: '48',
     codigo: '#OG048',
     fornecedor: 'ForneceMed',
     status: 'extravio_reembolso',
@@ -165,7 +165,7 @@ export const initialDeliveries: Delivery[] = [
     item: 'Daptomicina 500mg · 4 frascos',
   },
   {
-    id: 49,
+    id: '49',
     codigo: '#OG049',
     fornecedor: 'PharmaExpress',
     status: 'nao_entregue',
@@ -176,7 +176,7 @@ export const initialDeliveries: Delivery[] = [
     item: 'Eculizumab 300mg · 1 frasco',
   },
   {
-    id: 39,
+    id: '39',
     codigo: '#OG039',
     fornecedor: 'ForneceMed',
     status: 'entregue',
@@ -188,7 +188,7 @@ export const initialDeliveries: Delivery[] = [
 
 export const initialTransfers: Transfer[] = [
   {
-    id: 1,
+    id: '1',
     origem: 'Santa Casa – Campinas',
     destino: 'HC Unicamp',
     item: 'Morfina 10mg/ml',
@@ -198,7 +198,7 @@ export const initialTransfers: Transfer[] = [
     sugerida_por_ia: true,
   },
   {
-    id: 2,
+    id: '2',
     origem: 'HC Unicamp',
     destino: 'Santa Casa – Campinas',
     item: 'Epinefrina 1mg/ml',

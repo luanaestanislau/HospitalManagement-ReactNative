@@ -1,4 +1,3 @@
-// Mock implementation - Firebase Messaging not installed
 import { AlertItem } from '../data/mockData';
 
 export type PushAlertCallback = (alert: {
@@ -16,10 +15,8 @@ class NotificationService {
     if (this.initialized) return;
 
     try {
-      // Mock implementation - permissions would be requested here
       console.log('Mock: Notificações inicializadas');
       
-      // Mock FCM token
       this.token = 'mock-fcm-token-' + Date.now();
       console.log('Mock FCM Token:', this.token);
 
@@ -30,7 +27,6 @@ class NotificationService {
   }
 
   setupListeners(_onPushAlert: PushAlertCallback, _onNavigateToAlertas: () => void): void {
-    // Mock implementation - listeners would be set up here
     console.log('Mock: Listeners de notificação configurados');
   }
 

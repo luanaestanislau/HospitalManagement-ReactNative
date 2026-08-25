@@ -1,73 +1,25 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
+import type { AlertItem, Delivery, StockItem, Transfer } from '../data/mockData';
+import { mapAlerta, mapItem, mapPedido, mapPrevisao, type PrevisaoView } from '../services/mappers';
 import { ApiError, apiFetch, clearToken, saveToken } from '../services/api';
 import type {
   ApiAlertaResponse,
   ApiDashboardResponse,
+  ApiItemResponse,
+  ApiPaginaResponse,
   ApiPedidoResponse,
+  ApiPrevisaoResponse,
   ApiUsuarioResponse,
 } from '../types/Api';
-
-type AlertItem = {
-  id: string;
-  tipo: string;
-  prioridade: 'critico' | 'atencao' | 'info';
-  titulo: string;
-  descricao: string;
-  item_id?: string;
-  acoes: string[];
-};
-
-type StockItem = {
-  id: string;
-  nome: string;
-  quantidade_atual: number;
-  quantidade_minima: number;
-  status: 'critico' | 'atencao' | 'normal';
-  local_armazenamento?: string | null;
-  tipo?: string;
-};
-
-type Delivery = {
-  id: string;
-  codigo: string;
-  fornecedor: string;
-  status: string;
-  eta?: string;
-  hora_entrega?: string;
-  motivo_ocorrencia?: string;
-  item?: string;
-};
-
-type Transfer = {
-  id: string;
-  origem: string;
-  destino: string;
-  item: string;
-  quantidade: number;
-  urgencia: string;
-  status: string;
-  sugerida_por_ia: boolean;
-};
 
 type Analysis = {
   scoreInterno: number;
   classificacao: string;
   itensCriticos: number;
-  itensSemLocal: number;
   itensPrioritarios: number;
-  recomendacoes: Array<{
-    item: string;
-    status: string;
-    localAtual: string;
-    localSugerido: string;
-    quantidade: number;
-    quantidadeSugerida: number;
-    prioridade: 'alta' | 'media';
-    tempoTransferencia: number;
-    motivo: string;
-  }>;
+  previsoes: PrevisaoView[];
 };
 
 type AppContextValue = {
@@ -93,39 +45,7 @@ const TOKEN_KEY = 'medistock.token';
 
 const AppContext = createContext<AppContextValue | null>(null);
 
-function mapAlert(alert: ApiAlertaResponse): AlertItem {
-  const prioridade =
-    alert.severidade === 'CRITICA' || alert.severidade === 'ALTA'
-      ? 'critico'
-      : alert.severidade === 'MEDIA'
-        ? 'atencao'
-        : 'info';
-
-  return {
-    id: alert.id,
-    tipo: alert.tipo,
-    prioridade,
-    titulo: alert.titulo,
-    descricao: alert.mensagem,
-    item_id: alert.itemId || undefined,
-    acoes: ['Ver'],
-  };
-}
-
-function mapPedidoToDelivery(pedido: ApiPedidoResponse): Delivery {
-  return {
-    id: pedido.id,
-    codigo: pedido.codigo,
-    fornecedor: pedido.fornecedorId,
-    status: pedido.status,
-    eta: pedido.etaPrevista,
-    hora_entrega: pedido.dataEntrega || undefined,
-    motivo_ocorrencia: pedido.motivoOcorrencia || undefined,
-    item: 'Pedido de insumos',
-  };
-}
-
-function buildAnalysisFromDashboard(dashboard: ApiDashboardResponse): Analysis {
+function buildAnalysisBase(dashboard: ApiDashboardResponse): Omit<Analysis, 'previsoes'> {
   const criticos = dashboard.estoque.criticos ?? 0;
   const atencao = dashboard.estoque.atencao ?? 0;
   const total = dashboard.estoque.total ?? 0;
@@ -138,10 +58,16 @@ function buildAnalysisFromDashboard(dashboard: ApiDashboardResponse): Analysis {
     scoreInterno: score,
     classificacao,
     itensCriticos: criticos,
-    itensSemLocal: 0,
     itensPrioritarios: total,
-    recomendacoes: [],
   };
+}
+
+// Aceita tanto array puro quanto resposta paginada do Spring
+// ({ conteudo: [...] }, conforme ApiPaginaResponse<T> em types/Api.ts).
+function extrairLista<T>(resposta: T[] | ApiPaginaResponse<T> | null | undefined): T[] {
+  if (!resposta) return [];
+  if (Array.isArray(resposta)) return resposta;
+  return resposta.conteudo ?? [];
 }
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
@@ -151,27 +77,68 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<StockItem[]>([]);
   const [alerts, setAlerts] = useState<AlertItem[]>([]);
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
-  const [transfers, setTransfers] = useState<Transfer[]>([]);
+  // Backend ainda não tem endpoint de transferência entre hospitais.
+  const [transfers] = useState<Transfer[]>([]);
   const [analysis, setAnalysis] = useState<Analysis>({
     scoreInterno: 0,
     classificacao: 'Carregando...',
     itensCriticos: 0,
-    itensSemLocal: 0,
     itensPrioritarios: 0,
-    recomendacoes: [],
+    previsoes: [],
   });
   const [error, setError] = useState<string | null>(null);
+
+  const loadItens = useCallback(async () => {
+    const resposta = await apiFetch<ApiItemResponse[] | ApiPaginaResponse<ApiItemResponse>>('/itens', {
+      method: 'GET',
+    });
+    const itens = extrairLista(resposta).map(mapItem);
+    setItems(itens);
+    return itens;
+  }, []);
+
+  const loadAlertas = useCallback(async () => {
+    const resposta = await apiFetch<ApiAlertaResponse[] | ApiPaginaResponse<ApiAlertaResponse>>('/alertas', {
+      method: 'GET',
+    });
+    setAlerts(extrairLista(resposta).map(mapAlerta));
+  }, []);
 
   const loadDashboard = useCallback(async () => {
     const dashboard = await apiFetch<ApiDashboardResponse>('/dashboard/resumo', { method: 'GET' });
 
-    setAlerts((dashboard.alertasRecentes ?? []).map(mapAlert));
-    setDeliveries((dashboard.pedidosDoDia ?? []).map(mapPedidoToDelivery));
-    setAnalysis(buildAnalysisFromDashboard(dashboard));
-
-    setItems([]);
-    setTransfers([]);
+    setDeliveries((dashboard.pedidosDoDia ?? []).map(mapPedido));
+    setAnalysis((prev) => ({
+      ...buildAnalysisBase(dashboard),
+      previsoes: prev.previsoes,
+    }));
   }, []);
+
+  // O backend só expõe /previsoes/{itemId} (sem endpoint em lote), e lança
+  // 404 se ninguém gerou a previsão daquele item ainda — nesse caso caímos
+  // para POST /previsoes/{itemId}/gerar, como a própria API orienta.
+  const buscarOuGerarPrevisao = useCallback(async (itemId: string) => {
+    try {
+      return await apiFetch<ApiPrevisaoResponse>(`/previsoes/${itemId}`, { method: 'GET' });
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 404) {
+        return apiFetch<ApiPrevisaoResponse>(`/previsoes/${itemId}/gerar`, { method: 'POST' });
+      }
+      throw err;
+    }
+  }, []);
+
+  const loadPrevisoes = useCallback(async (itensAtuais: StockItem[]) => {
+    const criticos = itensAtuais.filter((item) => item.status === 'critico');
+
+    const resultados = await Promise.allSettled(criticos.map((item) => buscarOuGerarPrevisao(item.id)));
+
+    const previsoes = resultados
+      .filter((r): r is PromiseFulfilledResult<ApiPrevisaoResponse> => r.status === 'fulfilled')
+      .map((r) => mapPrevisao(r.value));
+
+    setAnalysis((prev) => ({ ...prev, previsoes }));
+  }, [buscarOuGerarPrevisao]);
 
   const loadUser = useCallback(async () => {
     const me = await apiFetch<ApiUsuarioResponse>('/auth/me', { method: 'GET' });
@@ -192,9 +159,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setUser(data.usuario);
 
       try {
-        await loadDashboard();
-      } catch (dashboardError) {
-        console.warn('Login concluído, mas o dashboard não pôde ser carregado:', dashboardError);
+        const itens = await loadItens();
+        await Promise.allSettled([loadAlertas(), loadDashboard(), loadPrevisoes(itens)]);
+      } catch (dataError) {
+        console.warn('Login concluído, mas os dados não puderam ser carregados:', dataError);
       }
       return true;
     } catch (err) {
@@ -203,17 +171,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, [loadDashboard]);
-
-  const loadItens = useCallback(async () => {
-  const itens = await apiFetch<StockItem[]>('/itens', { method: 'GET' });
-  setItems(itens);
-  }, []);
-
-  const loadTransferencias = useCallback(async () => {
-  const transfers = await apiFetch<Transfer[]>('/logistica/transferencias', { method: 'GET' });
-  setTransfers(transfers);
-  }, []); 
+  }, [loadAlertas, loadDashboard, loadItens, loadPrevisoes]);
 
   const register = useCallback(async (nome: string, email: string, senha: string) => {
     setError(null);
@@ -247,25 +205,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const refreshData = useCallback(async () => {
     try {
       await loadUser();
-      await loadDashboard();
+      const itens = await loadItens();
+      await Promise.allSettled([loadAlertas(), loadDashboard(), loadPrevisoes(itens)]);
     } catch (err) {
-      console.warn('Erro ao atualizar dashboard:', err);
+      console.warn('Erro ao atualizar dados:', err);
     }
-  }, [loadDashboard, loadUser]);
+  }, [loadAlertas, loadDashboard, loadItens, loadPrevisoes, loadUser]);
 
   const logout = useCallback(async () => {
     setUser(null);
     setItems([]);
     setAlerts([]);
     setDeliveries([]);
-    setTransfers([]);
     setAnalysis({
       scoreInterno: 0,
       classificacao: 'Sem dados',
       itensCriticos: 0,
-      itensSemLocal: 0,
       itensPrioritarios: 0,
-      recomendacoes: [],
+      previsoes: [],
     });
 
     await clearToken();
@@ -278,15 +235,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const token = await AsyncStorage.getItem(TOKEN_KEY);
         if (token) {
           await loadUser();
-          await loadDashboard();
+          const itens = await loadItens();
+          await Promise.allSettled([loadAlertas(), loadDashboard(), loadPrevisoes(itens)]);
         }
       } catch (err) {
         console.warn('Erro ao inicializar app:', err);
+        // Token expirado/inválido/de um backend em memória que reiniciou:
+        // limpa pra não repetir esse erro a cada abertura do app.
+        if (err instanceof ApiError && err.status === 401) {
+          await clearToken();
+          await AsyncStorage.removeItem(STORAGE_KEY);
+        }
       } finally {
         setBootstrapped(true);
       }
     })();
-  }, [loadDashboard, loadUser]);
+  }, [loadAlertas, loadDashboard, loadItens, loadPrevisoes, loadUser]);
 
   const value = useMemo<AppContextValue>(
     () => ({

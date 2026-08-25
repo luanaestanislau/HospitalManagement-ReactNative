@@ -4,6 +4,7 @@ import type {
     ApiDashboardResponse,
     ApiItemResponse,
     ApiPedidoResponse,
+    ApiPrevisaoResponse,
     ApiUsuarioResponse,
 } from '../types/Api';
 
@@ -12,7 +13,7 @@ export function mapUsuario(apiUser: ApiUsuarioResponse): User {
   return {
     nome: apiUser.nome,
     email: apiUser.email,
-    senha: '', // Senha não vem da API
+    senha: '', 
     cargo: apiUser.cargo,
     departamento: apiUser.departamento,
     registro: apiUser.registroProfissional,
@@ -23,13 +24,11 @@ export function mapUsuario(apiUser: ApiUsuarioResponse): User {
 
 // ============= ALERTAS =============
 export function mapAlerta(apiAlerta: ApiAlertaResponse): AlertItem {
-  // Mapear tipo do alerta
   let tipo: AlertItem['tipo'] = 'ia';
   if (apiAlerta.tipo === 'ESTOQUE_CRITICO') tipo = 'estoque_critico';
   else if (apiAlerta.tipo === 'VALIDADE') tipo = 'validade';
   else if (apiAlerta.tipo === 'PEDIDO_ATRASADO') tipo = 'atraso_entrega';
 
-  // Mapear prioridade
   let prioridade: AlertItem['prioridade'] = 'info';
   if (apiAlerta.severidade === 'CRITICA') prioridade = 'critico';
   else if (apiAlerta.severidade === 'ALTA') prioridade = 'critico';
@@ -37,47 +36,45 @@ export function mapAlerta(apiAlerta: ApiAlertaResponse): AlertItem {
   else if (apiAlerta.severidade === 'BAIXA') prioridade = 'info';
 
   return {
-    id: parseInt(apiAlerta.id, 10) || 0,
+    id: apiAlerta.id,
     tipo,
     prioridade,
     titulo: apiAlerta.titulo,
     descricao: apiAlerta.mensagem,
-    item_id: apiAlerta.itemId ? parseInt(apiAlerta.itemId, 10) : undefined,
+    item_id: apiAlerta.itemId ?? undefined,
     acoes: apiAlerta.status === 'ATIVO' ? ['Resolver', 'Ver detalhes'] : ['Ver detalhes'],
   };
 }
 
 // ============= ITENS DE ESTOQUE =============
 export function mapItem(apiItem: ApiItemResponse): StockItem {
-  // Mapear status
   let status: StockItem['status'] = 'normal';
   if (apiItem.status === 'CRITICO') status = 'critico';
   else if (apiItem.status === 'ATENCAO') status = 'atencao';
-  else if (apiItem.status === 'VENCENDO') status = 'atencao'; // Mapear vencendo para atencao
-  else if (apiItem.status === 'VENCIDO') status = 'critico'; // Mapear vencido para critico
+  else if (apiItem.status === 'VENCENDO') status = 'atencao'; 
+  else if (apiItem.status === 'VENCIDO') status = 'critico'; 
+  else if (apiItem.status === 'EXCESSO') status = 'atencao'; 
 
-  // Mapear tipo
   let tipo: StockItem['tipo'] = 'essencial_baixa_demanda';
   if (apiItem.tipo === 'MEDICAMENTO') tipo = 'primordial';
   else if (apiItem.tipo === 'MATERIAL_CIRURGICO') tipo = 'primordial';
 
   return {
-    id: parseInt(apiItem.id, 10) || 0,
+    id: apiItem.id,
     nome: apiItem.nome,
     tipo,
     categoria: apiItem.categoria,
     quantidade_atual: apiItem.quantidadeAtual,
     quantidade_minima: apiItem.quantidadeMinima,
-    quantidade_recomendada_ia: apiItem.quantidadeRecomendadaIa || undefined,
+    quantidade_recomendada_ia: apiItem.quantidadeRecomendadaIa ?? undefined,
     status,
     local_armazenamento: apiItem.localArmazenamento || null,
-    historico_consumo: [], // Histórico não vem da API ainda
+    historico_consumo: [], 
   };
 }
 
 // ============= PEDIDOS (DELIVERIES) =============
 export function mapPedido(apiPedido: ApiPedidoResponse): Delivery {
-  // Mapear status
   let status: Delivery['status'] = 'em_rota';
   if (apiPedido.slaExcedido || apiPedido.status === 'OCORRENCIA') status = 'atrasado';
   else if (apiPedido.status === 'ENTREGUE') status = 'entregue';
@@ -85,9 +82,9 @@ export function mapPedido(apiPedido: ApiPedidoResponse): Delivery {
   else if (apiPedido.status === 'EM_TRANSITO') status = 'em_rota';
 
   return {
-    id: parseInt(apiPedido.id, 10) || 0,
+    id: apiPedido.id,
     codigo: apiPedido.codigo,
-    fornecedor: 'Fornecedor', // Nome do fornecedor virá de outra chamada
+    fornecedor: 'Fornecedor', 
     status,
     eta: apiPedido.etaPrevista,
     hora_entrega: apiPedido.dataEntrega || undefined,
@@ -109,11 +106,38 @@ export function mapDashboard(apiDashboard: ApiDashboardResponse) {
   };
 }
 
-// ============= TRANSFERS (mock - backend não tem ainda) =============
+// ============= PREVISÃO =============
+// ⚠️ Alinhado ao types/Api.ts atual (demandaProjetada/sugestaoCompra/serie).
+// Se o backend real devolver historico/previsao/recomendacao/fatoresConsiderados
+// (como em PrevisaoResponse.java visto anteriormente), este mapper vai
+// produzir campos undefined em silêncio — confirme o JSON real do endpoint
+// antes de confiar nesta função em produção.
+export type PrevisaoView = {
+  itemId: string;
+  demandaProjetada: number;
+  diasProjetados: number;
+  mediaMovelSimples: number;
+  sugestaoCompra: number;
+  confianca: number;
+  serie: Array<{ data: string; valor: number }>;
+};
+
+export function mapPrevisao(apiPrevisao: ApiPrevisaoResponse): PrevisaoView {
+  return {
+    itemId: apiPrevisao.itemId,
+    demandaProjetada: apiPrevisao.demandaProjetada,
+    diasProjetados: apiPrevisao.diasProjetados,
+    mediaMovelSimples: apiPrevisao.mediaMovelSimples,
+    sugestaoCompra: apiPrevisao.sugestaoCompra,
+    confianca: apiPrevisao.confianca,
+    serie: apiPrevisao.serie,
+  };
+}
+
 export function createMockTransfers(): Transfer[] {
   return [
     {
-      id: 1,
+      id: '1',
       origem: 'Almoxarifado Central',
       destino: 'Farmácia do 3º andar',
       item: 'Soro Fisiológico 500ml',

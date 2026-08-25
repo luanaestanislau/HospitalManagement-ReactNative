@@ -2,9 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 declare const process: { env: { EXPO_PUBLIC_API_URL?: string } };
 
-// Em aparelho físico, use o IP da máquina que executa a API (não `localhost`).
-// Ex.: EXPO_PUBLIC_API_URL=http://192.168.0.10:8080/api/v1
-const API_URL = (process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8080/api/v1').replace(/\/$/, '');
+const API_URL = (process.env.EXPO_PUBLIC_API_URL ?? 'http://192.168.0.16:8080/api/v1').replace(/\/$/, '');
 const TOKEN_KEY = 'medistock.token';
 
 export class ApiError extends Error {

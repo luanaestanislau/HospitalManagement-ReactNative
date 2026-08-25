@@ -59,8 +59,8 @@ export type ApiItemResponse = {
   atualizadoEm: string;
 };
 
-export type TipoItem = 'MEDICAMENTO' | 'MATERIAL_CIRURGICO' | 'EQUIPAMENTO' | 'CONSUMIVEL' | 'OUTRO';
-export type StatusItem = 'CRITICO' | 'ATENCAO' | 'NORMAL' | 'EXCESSO' | 'VENCENDO' | 'VENCIDO';
+export type TipoItem = 'PRIMORDIAL' | 'ESSENCIAL_BAIXA_DEMANDA';
+  export type StatusItem = 'CRITICO' | 'ATENCAO' | 'NORMAL' | 'EXCESSO' | 'VENCENDO' | 'VENCIDO';
 
 export type ApiPaginaResponse<T> = {
   conteudo: T[];
