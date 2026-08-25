@@ -7,6 +7,7 @@ import { LoadingOverlay } from '../components/LoadingOverlay';
 import { colors } from '../theme/colors';
 import { useApp } from '../context/AppContext';
 import type { RootStackParamList } from '../../App';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Cadastro'>;
 
@@ -24,6 +25,7 @@ export function CadastroScreen({ navigation }: Props) {
 
   return (
     <LoadingOverlay loading={loading}>
+      <SafeAreaView style={styles.container} edges={['top', 'bottom']} >
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         <Pressable onPress={() => navigation.goBack()}>
           <Text style={styles.back}>←</Text>
@@ -44,6 +46,7 @@ export function CadastroScreen({ navigation }: Props) {
         </Pressable>
         {error ? <Text style={styles.error}>{error}</Text> : null}
       </ScrollView>
+</SafeAreaView>
     </LoadingOverlay>
   );
 }

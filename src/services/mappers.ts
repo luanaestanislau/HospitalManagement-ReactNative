@@ -13,7 +13,7 @@ export function mapUsuario(apiUser: ApiUsuarioResponse): User {
   return {
     nome: apiUser.nome,
     email: apiUser.email,
-    senha: '', 
+    senha: '', // Senha não vem da API
     cargo: apiUser.cargo,
     departamento: apiUser.departamento,
     registro: apiUser.registroProfissional,
@@ -24,11 +24,13 @@ export function mapUsuario(apiUser: ApiUsuarioResponse): User {
 
 // ============= ALERTAS =============
 export function mapAlerta(apiAlerta: ApiAlertaResponse): AlertItem {
+  // Mapear tipo do alerta
   let tipo: AlertItem['tipo'] = 'ia';
   if (apiAlerta.tipo === 'ESTOQUE_CRITICO') tipo = 'estoque_critico';
   else if (apiAlerta.tipo === 'VALIDADE') tipo = 'validade';
   else if (apiAlerta.tipo === 'PEDIDO_ATRASADO') tipo = 'atraso_entrega';
 
+  // Mapear prioridade
   let prioridade: AlertItem['prioridade'] = 'info';
   if (apiAlerta.severidade === 'CRITICA') prioridade = 'critico';
   else if (apiAlerta.severidade === 'ALTA') prioridade = 'critico';
@@ -36,6 +38,8 @@ export function mapAlerta(apiAlerta: ApiAlertaResponse): AlertItem {
   else if (apiAlerta.severidade === 'BAIXA') prioridade = 'info';
 
   return {
+    // ANTES: parseInt(apiAlerta.id, 10) || 0 — zerava todo ID que fosse UUID.
+    // O backend usa string (UUID), então mantemos o ID como veio da API.
     id: apiAlerta.id,
     tipo,
     prioridade,
