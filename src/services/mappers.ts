@@ -24,7 +24,7 @@ export function mapAlertaToUi(alerta: AlertaResponse, index: number) {
   return {
     id: String(alerta.itemEstoqueId || index),
     tipo: prioridade === 'critico' ? 'estoque_critico' : 'aviso',
-    titulo: `\({alerta.hospitalNome || 'Estoque'} -\){alerta.itemNome}`,
+    titulo: `${alerta.hospitalNome || 'Estoque'} - ${alerta.itemNome}`,
     descricao: alerta.mensagem,
     prioridade,
     acoes: prioridade === 'critico' ? ['Repor', 'Verificar'] : ['Detalhes'],
