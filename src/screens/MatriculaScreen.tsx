@@ -1,6 +1,7 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useEffect } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import type { RootStackParamList } from '../../App';
 import { AuthHeader } from '../components/AuthHeader';
@@ -27,7 +28,8 @@ export function MatriculaScreen({ navigation }: Props) {
 
   return (
     <LoadingOverlay loading={false}>
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+        
         <Pressable onPress={() => navigation.goBack()}>
           <Text style={styles.back}>←</Text>
         </Pressable>
@@ -51,7 +53,7 @@ export function MatriculaScreen({ navigation }: Props) {
         <Pressable onPress={confirm} style={styles.primaryButton}>
           <Text style={styles.primaryButtonText}>Confirmar e avançar</Text>
         </Pressable>
-      </ScrollView>
+    </SafeAreaView>
     </LoadingOverlay>
   );
 }

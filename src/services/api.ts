@@ -1,71 +1,25 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { create } from 'axios';
 
 declare const process: { env: { EXPO_PUBLIC_API_URL?: string } };
 
-const API_URL = (process.env.EXPO_PUBLIC_API_URL ?? 'http://192.168.0.16:8080/api/v1').replace(/\/$/, '');
-const TOKEN_KEY = 'medistock.token';
+export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://192.168.0.16:8080/api';
 
-export class ApiError extends Error {
-  status: number;
-
-  constructor(message: string, status: number) {
-    super(message);
-    this.name = 'ApiError';
-    this.status = status;
-  }
-}
-
-async function readErrorMessage(response: Response) {
-  try {
-    const data = await response.json();
-    if (typeof data === 'string') return data;
-    if (data?.mensagem) return data.mensagem;
-    if (data?.message) return data.message;
-    if (data?.error) return data.error;
-    return JSON.stringify(data);
-  } catch {
-    return response.statusText || `Request failed with status ${response.status}`;
-  }
-}
-
-export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const token = await AsyncStorage.getItem(TOKEN_KEY);
-
-  const headers: HeadersInit_ = {
+export const api = create({
+  baseURL: API_BASE_URL,
+  headers: {
     'Content-Type': 'application/json',
-    ...(options.headers ?? {}),
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
+  },
+});
 
-  let response: Response;
-  try {
-    response = await fetch(`${API_URL}${path}`, {
-      ...options,
-      headers,
-    });
-  } catch {
-    throw new ApiError(
-      `Não foi possível conectar à API em ${API_URL}. Verifique se ela está em execução e se a URL é acessível pelo dispositivo.`,
-      0,
-    );
+let jwtToken: string | null = null;
+
+export const setAuthToken = (token: string | null) => {
+  jwtToken = token;
+};
+
+api.interceptors.request.use((config) => {
+  if (jwtToken) {
+    config.headers.Authorization = `Bearer ${jwtToken}`;
   }
-
-  if (!response.ok) {
-    throw new ApiError(await readErrorMessage(response), response.status);
-  }
-
-  if (response.status === 204) return null as T;
-  return response.json() as Promise<T>;
-}
-
-export async function saveToken(token: string) {
-  await AsyncStorage.setItem(TOKEN_KEY, token);
-}
-
-export async function getToken() {
-  return AsyncStorage.getItem(TOKEN_KEY);
-}
-
-export async function clearToken() {
-  await AsyncStorage.removeItem(TOKEN_KEY);
-}
+  return config;
+});

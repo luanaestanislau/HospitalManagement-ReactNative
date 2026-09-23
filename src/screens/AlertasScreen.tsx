@@ -22,12 +22,12 @@ export function AlertasScreen() {
   const attentionCount = alerts.filter((item) => item.prioridade === 'atencao').length;
   const infoCount = alerts.filter((item) => item.prioridade === 'info').length;
 
-  const filters: Array<{
+  const filters: {
     key: typeof filter;
     label: string;
     count: number;
     variant: 'info' | 'critico' | 'atencao';
-  }> = [
+  }[] = [
     { key: 'todos', label: 'Todos', count: alerts.length, variant: 'info' },
     { key: 'critico', label: 'Críticos', count: criticalCount, variant: 'critico' },
     { key: 'atencao', label: 'Atenção', count: attentionCount, variant: 'atencao' },
@@ -85,7 +85,7 @@ export function AlertasScreen() {
                       ? 'LOGÍSTICA'
                       : 'AVISO'
               }
-              actions={alert.acoes.map((action) => ({ label: action, primary: action === 'Repor' }))}
+              actions={alert.acoes.map((action: string) => ({ label: action, primary: action === 'Repor' }))}
             />
           ))
         )}

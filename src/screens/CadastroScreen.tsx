@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput } from 'react-native';
 
 import { AuthHeader } from '../components/AuthHeader';
 import { LoadingOverlay } from '../components/LoadingOverlay';
@@ -20,7 +20,7 @@ export function CadastroScreen({ navigation }: Props) {
   const onRegister = async () => {
     if (!nome || !email || senha.length < 8) return;
     const ok = await register(nome.trim(), email.trim(), senha);
-    if (ok) navigation.replace('Login');
+    if (ok) navigation.replace('Matricula');
   };
 
   return (

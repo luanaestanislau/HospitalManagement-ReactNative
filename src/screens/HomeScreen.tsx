@@ -48,7 +48,7 @@ export function HomeScreen() {
             description={alert.descricao}
             variant={alert.prioridade === 'critico' ? 'critico' : 'atencao'}
             badgeLabel={alert.prioridade.toUpperCase()}
-            actions={alert.acoes.map((action) => ({ label: action, primary: action === 'Repor' }))}
+            actions={alert.acoes.map((action: string) => ({ label: action, primary: action === 'Repor' }))}
             progress={null}
           />
         ))}
@@ -311,4 +311,3 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
-
