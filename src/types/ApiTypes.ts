@@ -73,6 +73,60 @@ export interface TransferenciaResponse {
   geradoPorIa: boolean;
 }
 
+export interface HospitalMapaPonto {
+  id: number;
+  nome: string;
+  cidade: string | null;
+  latitude: number;
+  longitude: number;
+  itensCriticos: number;
+}
+
+export interface TransferenciaMapaResponse {
+  id: number;
+  itemNome: string;
+  origem: HospitalMapaPonto;
+  destino: HospitalMapaPonto;
+  distanciaKm: number;
+  tempoEstimadoMinutos: number;
+  status: 'PENDENTE' | 'EM_ROTA';
+  geradoPorIa: boolean;
+  motivo: string | null;
+}
+
+export interface LogisticaMapaResponse {
+  hospitais: HospitalMapaPonto[];
+  transferenciasAtivas: TransferenciaMapaResponse[];
+}
+
+export interface CandidatoHospitalResponse {
+  hospitalId: number;
+  hospitalNome: string;
+  demandaHistoricaMedia: number;
+  distanciaPonderadaKm: number;
+  pontuacao: number;
+}
+
+export interface RedistribuicaoResponse {
+  itemEstoqueId: number;
+  itemNome: string;
+  hospitalAtualId: number;
+  hospitalAtualNome: string;
+  hospitalIdealId: number;
+  hospitalIdealNome: string;
+  necessitaTransferencia: boolean;
+  rotaSugerida: {
+    hospitalOrigemId: number;
+    hospitalOrigemNome: string;
+    hospitalDestinoId: number;
+    hospitalDestinoNome: string;
+    distanciaKm: number;
+    tempoEstimadoMinutos: number;
+  } | null;
+  candidatos: CandidatoHospitalResponse[];
+  justificativaIA: string;
+}
+
 export interface InsightItemResponse {
   itemEstoqueId: number;
   itemNome: string;
