@@ -29,12 +29,14 @@ export function MatriculaScreen({ navigation }: Props) {
   return (
     <LoadingOverlay loading={false}>
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-        
+      <View style={styles.header}>
         <Pressable onPress={() => navigation.goBack()}>
           <Text style={styles.back}>←</Text>
         </Pressable>
-        <AuthHeader icon="id-card-outline" titulo="Matrícula" subtitulo="Confirme seus dados funcionais" />
 
+        <View style={{ marginBottom: 32 }}>
+        <AuthHeader icon="card-outline" titulo="Matrícula" subtitulo="Confirme seus dados funcionais"  />
+        </View>
         {[
           ['Matrícula funcional', user?.matricula ?? 'Gerando...'],
           ['E-mail', user?.email ?? ''],
@@ -53,6 +55,8 @@ export function MatriculaScreen({ navigation }: Props) {
         <Pressable onPress={confirm} style={styles.primaryButton}>
           <Text style={styles.primaryButtonText}>Confirmar e avançar</Text>
         </Pressable>
+
+      </View>
     </SafeAreaView>
     </LoadingOverlay>
   );
@@ -63,8 +67,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.bg,
   },
+  header: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    marginBottom: 0,
+  },
   content: {
-    padding: 28,
+    flex: 1,
+    paddingHorizontal: 28,
+    paddingVertical: 0,
+    paddingBottom: 32, 
   },
   back: {
     color: colors.text,
@@ -82,7 +94,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
     borderColor: colors.primary,
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
     paddingVertical: 12,
   },
   fieldText: {
@@ -93,6 +105,7 @@ const styles = StyleSheet.create({
     marginTop: 48,
     backgroundColor: colors.primary,
     paddingVertical: 16,
+    paddingHorizontal: 16,
     borderRadius: 12,
     alignItems: 'center',
   },
