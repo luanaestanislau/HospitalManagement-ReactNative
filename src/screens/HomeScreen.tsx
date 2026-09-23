@@ -8,7 +8,7 @@ import { useApp } from '../context/AppContext';
 import { colors } from '../theme/colors';
 
 export function HomeScreen() {
-  const { user, alerts, items, analysis, deliveries, logout, refreshData } = useApp();
+  const { user, alerts, items, analysis, deliveries, transfers, logout, refreshData } = useApp();
   const [profileOpen, setProfileOpen] = useState(false);
 
   const initials = useMemo(() => {
@@ -21,6 +21,8 @@ export function HomeScreen() {
   const inRoute = deliveries.filter((delivery) => delivery.status === 'em_rota').length;
   const delayed = deliveries.filter((delivery) => delivery.status === 'atrasado').length;
   const inRouteFirst = deliveries.find((delivery) => delivery.status === 'em_rota');
+  const activeTransfers = transfers.filter((transfer) => transfer.status === 'pendente' || transfer.status === 'em_rota');
+  const firstActiveTransfer = activeTransfers[0];
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -80,6 +82,18 @@ export function HomeScreen() {
             {delayed > 0 ? <Badge label={`${delayed} atrasado`} variant="critico" /> : null}
           </View>
           <Text style={styles.cardText}>{inRouteFirst?.codigo ?? 'Nenhuma entrega em rota'}</Text>
+        </View>
+
+        <View style={styles.card}>
+          <View style={styles.cardHeaderRow}>
+            <Text style={styles.cardTitle}>Transferências da rede</Text>
+            <Badge label={`${activeTransfers.length} ativas`} variant={activeTransfers.length > 0 ? 'ia' : 'normal'} />
+          </View>
+          <Text style={styles.cardText}>
+            {firstActiveTransfer
+              ? `${firstActiveTransfer.item}: ${firstActiveTransfer.origem} → ${firstActiveTransfer.destino}`
+              : 'Nenhuma transferência pendente ou em rota'}
+          </Text>
         </View>
 
         <Pressable onPress={refreshData} style={styles.refreshButton}>

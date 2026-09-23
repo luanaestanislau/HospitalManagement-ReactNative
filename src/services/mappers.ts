@@ -22,7 +22,7 @@ export function mapItemEstoqueToUi(item: ItemEstoqueResponse) {
 export function mapAlertaToUi(alerta: AlertaResponse, index: number) {
   const prioridade = alerta.tipo.toLowerCase() as 'critico' | 'atencao' | 'info';
   return {
-    id: String(alerta.itemEstoqueId || index),
+    id: `${alerta.itemEstoqueId || 'alerta'}-${index}`,
     tipo: prioridade === 'critico' ? 'estoque_critico' : 'aviso',
     titulo: `${alerta.hospitalNome || 'Estoque'} - ${alerta.itemNome}`,
     descricao: alerta.mensagem,

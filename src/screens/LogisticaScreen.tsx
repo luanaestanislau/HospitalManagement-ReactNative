@@ -63,7 +63,11 @@ export function LogisticaScreen() {
           text: 'Confirmar',
           onPress: async () => {
             const created = await confirmRedistribution(itemEstoqueId);
-            if (!created) Alert.alert('Transferência não criada', 'Verifique a mensagem de erro e tente novamente.');
+            if (!created) {
+              Alert.alert('Transferência não criada', 'Verifique a mensagem de erro e tente novamente.');
+            } else {
+              Alert.alert('Transferência criada', 'A rota, a Home e os Alertas já foram atualizados.');
+            }
           },
         },
       ],
